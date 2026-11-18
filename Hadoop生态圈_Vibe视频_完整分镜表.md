@@ -266,12 +266,14 @@ HBase GET rowkey=O-1001
 ## 6. 网页工程与验收
 
 ```text
-index.html                     # 浏览器播放器
-src/clock.ts                   # 播放、暂停、定位与重播
-src/timeline.ts                # 全片镜头区间、章节与字幕入口
-src/continuation.ts            # 03–09 的镜头起点与无声字幕
-src/orders.ts                  # 三条订单样例
-src/visual/                    # 场景画师和 Canvas 绘制工具
+index.html                     # 作品目录
+works/hadoop/
+  index.html                   # 浏览器播放器
+  src/clock.ts                 # 播放、暂停、定位与重播
+  src/timeline.ts              # 全片镜头区间、章节与字幕入口
+  src/continuation.ts          # 03–09 的镜头起点与无声字幕
+  src/orders.ts                # 三条订单样例
+  src/visual/                  # 场景画师和 Canvas 绘制工具
 tests/timeline.test.ts         # 文档与实现的时间轴对照
 ```
 

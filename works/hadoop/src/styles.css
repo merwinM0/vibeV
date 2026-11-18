@@ -27,9 +27,8 @@ button:disabled { opacity: .5; }
 .shell { width: min(100% - 72px, 1512px); margin-inline: auto; }
 .masthead, .footer { display: flex; justify-content: space-between; align-items: center; gap: 14px; color: var(--muted); }
 .masthead { min-height: 70px; border-bottom: 1px solid var(--rule); }
-.signature { display: flex; align-items: center; gap: 11px; font-weight: 750; color: var(--ink); }
-.signature svg { color: var(--accent); }
-.signature-note { font-weight: 450; color: var(--muted); margin-inline-start: .65rem; font-size: .8rem; }
+.signature { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-size: .9rem; font-weight: 750; color: var(--accent); text-decoration: none; }
+.signature:hover { text-decoration: underline; text-underline-offset: 4px; }
 .edition, .footer { font-size: .8rem; }
 .edition { display: flex; gap: 8px; align-items: center; white-space: nowrap; }
 .edition i { width: 7px; height: 7px; background: var(--accent); border-radius: 50%; }
@@ -97,7 +96,6 @@ button:disabled { opacity: .5; }
 @media (max-width: 620px) {
   .shell { width: calc(100% - 28px); }
   .masthead { min-height: 54px; }
-  .signature-note { display: none; }
   .intro { margin-block: 19px 16px; }
   .chapter-panel { display: flex; flex-direction: column; }
   .chapters { grid-template-columns: 1fr; }

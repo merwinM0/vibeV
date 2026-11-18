@@ -1,11 +1,13 @@
-import { readdir } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { redirectTo } from './pages';
 
 const dist = new URL('../dist/', import.meta.url);
-const files = await readdir(dist, { withFileTypes: true }).catch(() => {
-  throw new Error('Run bun run build before starting the preview.');
-});
-const routes = new Map(files.filter((file) => file.isFile()).map((file) => [`/${file.name}`, new URL(file.name, dist)]));
-if (!routes.has('/index.html')) throw new Error('Missing dist/index.html. Run bun run build.');
+if (!await Bun.file(new URL('index.html', dist)).exists()) throw new Error('Run bun run build before starting the preview.');
+const files = new Map<string, URL>();
+for await (const path of new Bun.Glob('**/*').scan(fileURLToPath(dist))) {
+  const encoded = path.split('/').map(encodeURIComponent).join('/');
+  files.set(`/${encoded}`, new URL(encoded, dist));
+}
 
 const server = Bun.serve({
   hostname: '127.0.0.1',
@@ -14,12 +16,15 @@ const server = Bun.serve({
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       return new Response(null, { status: 405, headers: { Allow: 'GET, HEAD' } });
     }
-    const pathname = new URL(request.url).pathname;
-    const fileURL = routes.get(pathname === '/' ? '/index.html' : pathname);
+    const { pathname, search } = new URL(request.url);
+    if (!pathname.endsWith('/') && files.has(`${pathname}/index.html`)) {
+      return redirectTo(`${pathname}/${search}`);
+    }
+    const fileURL = files.get(pathname.endsWith('/') ? `${pathname}index.html` : pathname);
     if (!fileURL) return new Response('Not found', { status: 404 });
     const file = Bun.file(fileURL);
     return new Response(request.method === 'HEAD' ? null : file, { headers: { 'Content-Type': file.type } });
   },
 });
 
-console.log(`Hadoop Vibe: ${server.url}`);
+console.log(`Vibe 图解：${server.url}`);

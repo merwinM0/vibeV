@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { chapters, duration, FPS, frameAt, scenes, timecode } from '../src/timeline';
-import { PlaybackClock } from '../src/clock';
+import { chapters, duration, FPS, frameAt, scenes, timecode } from '../works/hadoop/src/timeline';
+import { PlaybackClock } from '../works/hadoop/src/clock';
 
 const storyboard = new URL('../Hadoop生态圈_Vibe视频_完整分镜表.md', import.meta.url);
 const toSeconds = (timestamp: string) => {
