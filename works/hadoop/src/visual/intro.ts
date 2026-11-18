@@ -14,7 +14,6 @@ export const opening: Painter = (p, t, motion) => {
   const grow = eased(t, .7, 2.8);
   const density = motion ? grow : Number(t >= 1.75);
   const surge = motion ? Math.sin(grow * Math.PI) : 0;
-  p.glow(1350, 617, 362, '#22608065');
   for (let i = 0; i < 105; i++) {
     if (i > density * 104 || !density || (!motion && i % 3 !== 0)) continue;
     const q = phase((motion ? t * (1.3 + noise(i) * .6) : 0) + noise(i + 21) * 2.6, 2.6);
@@ -82,13 +81,12 @@ export const intake: Painter = (p, t) => {
   });
 
   const door = p.progress(t, 1.6, 2.6);
-  p.glow(1468, 553, 430, '#24688669');
   p.poly([[1217, 420], [1360, 337], [1765, 337], [1633, 420]], '#19334b', '#3d6785');
   p.poly([[1633, 420], [1765, 337], [1765, 643], [1633, 743]], '#14253d', '#3d6785');
-  p.rect(1217, 420, 416, 323, '#13283b', '#77cfea', 2);
+  p.rect(1217, 420, 416, 323, '#164454', cyan, 13, 3);
   p.rect(1287, 481, 276, 208, '#091321', '#437088');
-  p.rect(1290, 484, 133 - door * 121, 201, '#22455a', '#6ac6e5', 2);
-  p.rect(1426 + door * 121, 484, 133 - door * 121, 201, '#1c3950', '#6ac6e5', 2);
+  p.rect(1290, 484, 133 - door * 121, 201, '#216076', cyan, 6);
+  p.rect(1426 + door * 121, 484, 133 - door * 121, 201, '#216076', cyan, 6);
   p.text('Hadoop 入口', 1425, 459, 27, cyan, 'center');
   const entry = [[987, 683], [1120, 683], [1292, 572], [1508, 572]] as const;
   p.route(entry, 'data', null, door > .5);
@@ -177,7 +175,6 @@ export function factoryMap(p: Ink, t: number, common: boolean, full = false, tim
     const rise = p.progress(baseTime, 0, 1.4);
     const from = 741 + (p.motion ? (full ? 49 : 104) * (1 - rise) : 0);
     p.alpha(.24 + .76 * rise, () => {
-      p.glow(930, from + 45, 320, '#4b8cad44');
       p.panel(477, from, 964, 81, color.dep);
       p.text('Hadoop Common', 506, from + 51, 35, color.ink, 'left', 700, true);
       p.text('共享库  /  工具  /  基础接口', 869, from + 51, 30, color.dep);
@@ -242,7 +239,6 @@ export const directories: Painter = (p, t) => {
     }));
   });
   p.text(orderPath, 117, 829, 28, color.dim, 'left', 500, true);
-  p.glow(1440, 540, 415, '#215c7e59');
   p.poly([[1028, 624], [1491, 514], [1818, 637], [1342, 762]], '#102539', '#3f6880');
   for (let i = 0; i < 3; i++) {
     const start = 2.6 + i * .65, end = start + 1.5;

@@ -179,7 +179,6 @@ const correction: Painter = (p, t) => {
 const closing: Painter = (p, t) => {
   const a = [[580, 531], [763, 531], [763, 423], [1078, 423]] as const;
   const b = [[580, 577], [815, 577], [815, 686], [1078, 686]] as const;
-  p.glow(972, 554, 333, '#1e647150');
   box(p, {x: 141, y: 493, w: 439, title: '一批已清洗订单', note: '同一个业务起点', hue: data});
   route(p, t, .47, 2.46, a, 'data', 42);
   route(p, t, 1.32, 3.68, b, 'data', 42);

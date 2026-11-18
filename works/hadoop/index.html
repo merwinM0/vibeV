@@ -3,27 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#ebf5f7">
+  <meta name="theme-color" content="#080809">
   <title>Hadoop 生态圈｜数据工厂</title>
   <link rel="stylesheet" href="./src/styles.css">
   <script type="module" src="./src/main.ts"></script>
 </head>
 <body>
-  <main class="shell">
-    <header class="masthead">
-      <a class="signature" href="../../">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5m5 5-5-5 5-5"/></svg>
-        <span>返回作品目录</span>
-      </a>
-      <span class="edition"><i aria-hidden="true"></i> 10 章完整讲解</span>
-    </header>
-
-    <div class="intro">
+  <header class="masthead">
+    <div class="shell header-inner">
+      <a class="brand" href="../../" aria-label="返回作品目录">vibeV</a>
       <h1>Hadoop 生态圈</h1>
-      <p>跟随一批订单，看看数据怎样存得下、算得动、查得到。</p>
     </div>
-
-    <div class="layout">
+  </header>
+  <main class="shell viewer">
       <section class="player" id="player" aria-label="Hadoop 网页播放器" tabindex="0">
         <div class="picture" id="picture">
           <canvas id="stage" width="1920" height="1080" aria-hidden="true"></canvas>
@@ -31,7 +23,9 @@
           <noscript><p>开启 JavaScript 后即可播放。</p></noscript>
         </div>
         <div class="controls">
-          <input id="seek" class="seek" type="range" min="0" max="435" step="any" value="0" aria-label="播放进度" disabled>
+          <div id="seek-track" class="seek-track">
+            <input id="seek" class="seek" type="range" min="0" max="435" step="any" value="0" aria-label="播放进度" disabled>
+          </div>
           <div class="transport">
             <button id="play" class="play" type="button" disabled>
               <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path class="icon-play" d="M7 4v16l14-8z" fill="currentColor"/><path class="icon-pause" d="M6 4h4v16H6zm8 0h4v16h-4z" fill="currentColor"/><path class="icon-replay" d="M4 10a8 8 0 1 1 1 7M4 4v6h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -46,17 +40,10 @@
         </div>
       </section>
 
-      <aside class="chapter-panel" aria-labelledby="chapter-heading">
-        <div class="panel-heading"><h2 id="chapter-heading">播放章节</h2><span id="chapter-count">10 章</span></div>
-        <ol id="chapters" class="chapters"></ol>
-        <div class="now" id="now">
-          <span class="scene-index" id="scene-index"></span>
-          <h3 id="scene-title"></h3>
-          <p id="transcript"></p>
-        </div>
-      </aside>
-    </div>
-    <footer class="footer"><span>案例：预处理后的电商订单</span><span>宽屏 16:9 <span class="footer-dash">/</span> 中文字幕</span></footer>
+    <nav class="chapter-panel" aria-label="章节">
+      <ol id="chapters" class="chapters"></ol>
+    </nav>
+    <p id="transcript" class="transcript" aria-label="当前字幕"></p>
   </main>
 </body>
 </html>

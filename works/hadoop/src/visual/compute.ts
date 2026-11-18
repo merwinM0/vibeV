@@ -140,7 +140,6 @@ const shuffle: Painter = (p, t) => {
         const tail = along(path, Math.max(0, q - .16));
         p.line([tail, [x, y]], `${hue}40`, 24);
         p.line([tail, [x, y]], `${hue}dc`, 5);
-        p.glow(x, y, 94, `${hue}47`);
       }
       kv(p, x - 55, y - 27, String(Number(r.amount)), hue, 110);
     }

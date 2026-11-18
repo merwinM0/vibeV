@@ -92,7 +92,7 @@ export function bars(p: Ink, x: number, y: number, w: number, h: number, t: numb
     const q = p.progress(t, i * .3, 1.5 + i * .3);
     const top = floor - (h - 165) * r.total / 175 * q;
     const width = Math.min(144, w * .22);
-    p.rect(xx - width / 2, top, width, Math.max(1, floor - top), `${r.hue}60`, r.hue, 3);
+    p.rect(xx - width / 2, top, width, Math.max(1, floor - top), r.hue, undefined, 8);
     p.text(String(Math.round(q * r.total)), xx, top - 17, 35, r.hue, 'center', 740, true);
     p.text(`${r.province} / ${r.count} 单`, xx, floor + 43, 27, ink, 'center');
   });
@@ -105,7 +105,7 @@ export function folio(p: Ink, x: number, y: number, heading: string, copy: strin
 }
 
 export function kv(p: Ink, x: number, y: number, label: string, hue: string, w = 220) {
-  p.rect(x, y, w, 58, `${hue}24`, `${hue}97`, 5);
+  p.rect(x, y, w, 58, `${hue}29`, hue, 12);
   p.text(label, x + w / 2, y + 40, 29, hue, 'center', 670);
 }
 

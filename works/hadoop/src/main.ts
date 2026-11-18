@@ -1,5 +1,6 @@
 import { PlaybackClock } from './clock';
-import { chapters, duration, frameAt, timecode, type ChapterId } from './timeline';
+import { chapterReel } from './chapter-reel';
+import { duration, frameAt, timecode } from './timeline';
 import { Film } from './visual/film';
 
 function element<T extends HTMLElement>(id: string, kind: { new(): T }): T {
@@ -12,16 +13,14 @@ const player = element('player', HTMLElement);
 const canvas = element('stage', HTMLCanvasElement);
 const captionNode = element('caption', HTMLParagraphElement);
 const transcript = element('transcript', HTMLParagraphElement);
-const sceneIndex = element('scene-index', HTMLElement);
-const sceneTitle = element('scene-title', HTMLElement);
 const seek = element('seek', HTMLInputElement);
+const seekTrack = element('seek-track', HTMLElement);
 const play = element('play', HTMLButtonElement);
 const playLabel = element('play-label', HTMLElement);
 const timeLabel = element('time', HTMLElement);
 const durationLabel = element('duration', HTMLElement);
 const fullscreen = element('expand', HTMLButtonElement);
 const chapterList = element('chapters', HTMLOListElement);
-const chapterCount = element('chapter-count', HTMLElement);
 const motion = matchMedia('(prefers-reduced-motion: reduce)');
 
 function attach(ctx: CanvasRenderingContext2D) {
@@ -29,33 +28,8 @@ function attach(ctx: CanvasRenderingContext2D) {
   const clock = new PlaybackClock();
   let raf = 0;
   let lastFrame = -1;
-  let lastTitle = '';
   let lastCaption = '';
-  let lastChapter: ChapterId | undefined;
-  const chapterButtons = new Map<ChapterId, HTMLButtonElement>();
-
-  const span = (className: string, text: string) => {
-    const node = document.createElement('span');
-    node.className = className;
-    node.textContent = text;
-    return node;
-  };
-
-  chapterCount.textContent = `${chapters.length} 章`;
-  for (const chapter of chapters) {
-    const row = document.createElement('li');
-    const button = document.createElement('button');
-    const title = span('chapter-content', '');
-    title.append(span('chapter-title', chapter.title), span('chapter-note', chapter.note));
-    button.className = 'chapter';
-    button.type = 'button';
-    button.dataset.chapter = chapter.id;
-    button.append(span('chapter-number', chapter.id), title, span('chapter-time', timecode(chapter.start)));
-    button.addEventListener('click', () => jump(chapter.start));
-    row.append(button);
-    chapterList.append(row);
-    chapterButtons.set(chapter.id, button);
-  }
+  const reel = chapterReel(chapterList, jump);
 
   function paint(seconds: number) {
     const { scene, frame, elapsed, caption } = frameAt(seconds);
@@ -67,41 +41,20 @@ function attach(ctx: CanvasRenderingContext2D) {
       captionNode.textContent = transcript.textContent = caption;
       lastCaption = caption;
     }
-    if (scene.id !== lastTitle) {
-      sceneTitle.textContent = scene.title.replace('\n', '');
-      sceneIndex.textContent = `当前镜头 / ${scene.id}`;
-      player.dataset.scene = lastTitle = scene.id;
-    }
-    if (scene.chapter !== lastChapter) {
-      const active = chapterButtons.get(scene.chapter);
-      if (active) {
-        active.setAttribute('aria-current', 'true');
-        keepChapterInView(active);
-      }
-      if (lastChapter) chapterButtons.get(lastChapter)?.removeAttribute('aria-current');
-      lastChapter = scene.chapter;
-    }
+    if (player.dataset.scene !== scene.id) player.dataset.scene = scene.id;
+    reel.show(scene.chapter);
     const position = timecode(seconds);
     if (timeLabel.textContent !== position) {
       timeLabel.textContent = position;
       seek.setAttribute('aria-valuetext', `${position} / ${timecode(duration)}`);
     }
     seek.value = String(seconds);
-    seek.style.setProperty('--played', `${seconds * 100 / duration}%`);
+    seekTrack.style.setProperty('--ratio', String(seconds / duration));
     const mode = clock.playing ? 'pause' : seconds === duration ? 'replay' : 'play';
     if (play.dataset.mode !== mode) {
       play.dataset.mode = mode;
       playLabel.textContent = mode === 'pause' ? '暂停' : mode === 'replay' ? '重播' : '播放';
     }
-  }
-
-  function keepChapterInView(button: HTMLButtonElement) {
-    if (chapterList.scrollHeight <= chapterList.clientHeight) return;
-    const viewport = chapterList.getBoundingClientRect();
-    const row = button.getBoundingClientRect();
-    // Scroll only the list; jumping from the timeline must not move the page.
-    if (row.bottom > viewport.bottom) chapterList.scrollTop += row.bottom - viewport.bottom;
-    else if (row.top < viewport.top) chapterList.scrollTop += row.top - viewport.top;
   }
 
   function tick(now: number) {

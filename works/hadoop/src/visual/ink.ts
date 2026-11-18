@@ -1,11 +1,20 @@
 export const W = 1920;
 export const H = 1080;
 export const color = {
-  bg: '#0b1020', ink: '#ebf7ff', dim: '#9ab6ce', grid: '#335675',
-  data: '#76dcfa', ctl: '#f8cf85', dep: '#b5bad7', off: '#f09ca0',
-  hdfs: '#76dcfa', yarn: '#f8cf85', mr: '#79e0be', spark: '#cbb3ff',
-  hive: '#ffdc8f', hbase: '#ff9e88', workflow: '#b5a9d6', zk: '#c1cfdd',
+  bg: '#0c0e12', ink: '#fafbff', dim: '#c1c7da', grid: '#222734',
+  data: '#54e8ff', ctl: '#ffb653', dep: '#c9cde3', off: '#ff6e78',
+  hdfs: '#54e8ff', yarn: '#ffb653', mr: '#58efad', spark: '#d3a3ff',
+  hive: '#ffe16a', hbase: '#ff858d', workflow: '#c3b6ff', zk: '#d8e2ee',
 };
+
+export const chapterHues = [color.data, color.mr, color.hdfs, color.yarn, color.spark,
+  color.hive, color.hbase, color.workflow, color.mr, color.data] as const;
+
+function tint(hue: string, amount: number) {
+  const rgb = Number.parseInt(hue.slice(1, 7), 16);
+  const channel = (shift: number) => Math.round(23 + ((rgb >> shift & 255) - 23) * amount);
+  return `rgb(${channel(16)},${channel(8)},${channel(0)})`;
+}
 
 export type Point = readonly [x: number, y: number];
 export type PathKind = 'data' | 'control' | 'dependency';
@@ -97,20 +106,20 @@ export class Ink {
     c.restore();
   }
 
-  rect(x: number, y: number, w: number, h: number, fill: string | CanvasGradient, stroke?: string, r = 0) {
+  rect(x: number, y: number, w: number, h: number, fill: string, stroke?: string, r = 0, strokeWidth = 2) {
     const c = this.ctx;
     c.beginPath();
     c.roundRect(x, y, w, h, r);
     c.fillStyle = fill;
     c.fill();
     if (stroke) {
-      c.lineWidth = 2;
+      c.lineWidth = strokeWidth;
       c.strokeStyle = stroke;
       c.stroke();
     }
   }
 
-  poly(points: readonly Point[], fill: string | CanvasGradient, stroke?: string) {
+  poly(points: readonly Point[], fill: string, stroke?: string) {
     const c = this.ctx;
     c.beginPath();
     points.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y));
@@ -144,27 +153,15 @@ export class Ink {
     c.fill();
   }
 
-  glow(x: number, y: number, r: number, fill: string) {
-    const g = this.ctx.createRadialGradient(x, y, 0, x, y, r);
-    g.addColorStop(0, fill);
-    g.addColorStop(1, `${fill.slice(0, 7)}00`);
-    this.rect(x - r, y - r, r * 2, r * 2, g);
-  }
-
   panel(x: number, y: number, w: number, h: number, hue = color.data, strong = true) {
-    const c = this.ctx;
-    const g = c.createLinearGradient(x, y, x + w * .33, y + h);
-    g.addColorStop(0, strong ? '#20394f' : '#142538');
-    g.addColorStop(1, '#101b2d');
-    this.rect(x, y, w, h, g, `${hue}${strong ? '8a' : '4a'}`, 7);
-    this.line([[x + 8, y + 2], [x + Math.min(w - 8, 48), y + 2]], `${hue}${strong ? 'bc' : '60'}`, 3);
+    this.rect(x, y, w, h, tint(hue, strong ? .19 : .055), `${hue}${strong ? 'ec' : '68'}`, 15, strong ? 3 : 2);
   }
 
   tag(value: string, x: number, y: number, hue = color.dim, size = 27) {
     const c = this.ctx;
     c.font = `600 ${size}px ${sans}`;
     const width = Math.ceil(c.measureText(value).width) + 32;
-    this.rect(x, y, width, size + 22, '#182638', `${hue}62`, 5);
+    this.rect(x, y, width, size + 22, tint(hue, .13), `${hue}92`, 11);
     this.text(value, x + 16, y + size + 1, size, hue);
     return width;
   }
@@ -172,8 +169,7 @@ export class Ink {
   route(points: readonly Point[], kind: PathKind, progress: number | null = null, active = true, arrow = true) {
     const hue = kind === 'data' ? color.data : kind === 'control' ? color.ctl : color.dep;
     const dash = kind === 'data' ? [] : kind === 'control' ? [15, 12] : [2, 10];
-    this.line(points, `${hue}${active ? '18' : '08'}`, 11, dash);
-    this.line(points, `${hue}${active ? 'db' : '48'}`, 3, dash);
+    this.line(points, `${hue}${active ? 'ff' : '60'}`, active ? 4 : 2.5, dash);
     if (arrow) {
       const [x, y] = points[points.length - 1];
       const [x0, y0] = points[points.length - 2];
@@ -183,7 +179,6 @@ export class Ink {
     }
     if (progress !== null && active) {
       const [x, y] = along(points, progress);
-      this.glow(x, y, 28, `${hue}73`);
       if (kind === 'data') this.poly([[x, y - 8], [x + 8, y], [x, y + 8], [x - 8, y]], hue);
       else this.dot(x, y, 5, hue);
     }
@@ -194,15 +189,15 @@ export class Ink {
     const left: Point = [x - s, y - s * .22];
     const right: Point = [x + s, y - s * .22];
     const mid: Point = [x, y + s * .22];
-    const edge = `${hue}a5`;
-    this.poly([top, right, mid, left], `${hue}70`, edge);
-    this.poly([left, mid, [x, y + s * 1.07], [x - s, y + s * .63]], '#244259', edge);
-    this.poly([mid, right, [x + s, y + s * .63], [x, y + s * 1.07]], '#132e47', edge);
+    const edge = `${hue}d8`;
+    this.poly([top, right, mid, left], tint(hue, .84), edge);
+    this.poly([left, mid, [x, y + s * 1.07], [x - s, y + s * .63]], tint(hue, .53), edge);
+    this.poly([mid, right, [x + s, y + s * .63], [x, y + s * 1.07]], tint(hue, .31), edge);
     if (label) this.text(label, x, y + s * 1.07 + 38, 28, hue, 'center', 650, true);
   }
 
   file(x: number, y: number, s: number, hue = color.data) {
-    this.poly([[x, y], [x + s * .66, y], [x + s, y + s * .34], [x + s, y + s * 1.16], [x, y + s * 1.16]], '#1a344a', hue);
+    this.poly([[x, y], [x + s * .66, y], [x + s, y + s * .34], [x + s, y + s * 1.16], [x, y + s * 1.16]], tint(hue, .33), hue);
     this.line([[x + s * .66, y], [x + s * .66, y + s * .34], [x + s, y + s * .34]], `${hue}a8`, 1.5);
     if (s >= 25) {
       this.line([[x + s * .19, y + s * .58], [x + s * .81, y + s * .58]], `${hue}83`, 2);

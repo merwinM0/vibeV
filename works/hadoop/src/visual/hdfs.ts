@@ -47,7 +47,6 @@ export const warehouse: Painter = (p, t, motion) => {
     c.scale(1 + .10 * (1 - q), 1 + .10 * (1 - q));
     c.translate(-960, -575);
   }
-  p.glow(970, 604, 571, '#25597756');
   p.poly([[127, 820], [1793, 820], [1560, 621], [362, 621]], '#102336', '#345773');
   for (let i = 0; i < 5; i++) {
     p.line([[134 + i * 405, 820], [363 + i * 297, 621]], '#41708d44');
@@ -78,7 +77,6 @@ export const warehouse: Painter = (p, t, motion) => {
 
 export const split: Painter = (p, t) => {
   const q = p.progress(t, 1.5, 2.84);
-  p.glow(469, 571, 345, '#235a794b');
   p.text(t < 1.5 ? '订单文件' : '三块独立数据', 126, 356, 34, cyan);
   p.tag('按配置切块', 126, 741, subdued);
   p.alpha(1 - q * .92, () => p.cube(415, 541, 177, cyan));
@@ -91,7 +89,7 @@ export const split: Painter = (p, t) => {
       p.line([[x - 73, 536], [x + 55, 480], [x + 55, 480 + 138 * sweep]], '#dbfbff', 2.5);
     });
   }
-  const hues = ['#9ee5fc', '#76dcfa', '#76bfff'];
+  const hues = ['#9af8ff', cyan, '#80abff'];
   for (let i = 0; i < 3; i++) {
     const launch = 2.9 + i * .25, land = 4.7 + i * .3;
     const y = 340 + i * 176;
@@ -230,7 +228,6 @@ export const outage: Painter = (p, t) => {
     p.impact(424, 767, t - 7.5, cyan, 124);
   }
   if (lost) {
-    p.glow(685, y + 53, 208, '#842c5660');
     p.line([[463, y + 63], [489, y + 89]], color.off, 4);
     p.line([[489, y + 63], [463, y + 89]], color.off, 4);
     p.impact(684, y + 87, t - 2, color.off, 173);
