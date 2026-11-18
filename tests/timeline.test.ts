@@ -8,17 +8,29 @@ const toSeconds = (timestamp: string) => {
   return minutes * 60 + seconds;
 };
 
-describe('approved 00–02 timeline', () => {
-  test('uses the revised storyboard boundaries and ends after S16 with no extra space', async () => {
+describe('full 00–09 timeline', () => {
+  test('uses all storyboard boundaries and ends after S59 with no extra space', async () => {
     const text = await Bun.file(storyboard).text();
-    const preview = text.split('### 03｜', 1)[0];
-    const rows = [...preview.matchAll(/\*\*(S\d{2})\*\*<br>(\d\d:\d\d)–(\d\d:\d\d)<br>(\d+) 秒/g)];
-    expect(rows).toHaveLength(16);
+    const rows = [...text.matchAll(/\*\*(S\d{2})\*\*<br>(\d\d:\d\d)–(\d\d:\d\d)<br>(\d+) 秒/g)];
+    expect(rows).toHaveLength(59);
     expect(scenes.map((scene) => ({ id: String(scene.id), start: Number(scene.start), end: Number(scene.end) })))
       .toEqual(rows.map(([, id, start, end]) => ({ id, start: toSeconds(start), end: toSeconds(end) })));
-    for (const [, , start, end, length] of rows) expect(toSeconds(end) - toSeconds(start)).toBe(Number(length));
-    expect(timecode(duration)).toBe('02:00');
-    expect(chapters.map((chapter) => [chapter.start, chapter.end])).toEqual([[0, 26], [26, 48], [48, 120]]);
+    for (const [, , start, end, length] of rows) {
+      expect(toSeconds(end) - toSeconds(start)).toBe(Number(length));
+      expect(Number(length)).toBeGreaterThanOrEqual(6);
+      expect(Number(length)).toBeLessThanOrEqual(9);
+    }
+    expect(timecode(duration)).toBe('07:15');
+    const parts = [...text.matchAll(/^\| (\d\d)｜.*? \| (\d\d:\d\d)–(\d\d:\d\d) \|/gm)];
+    expect(parts).toHaveLength(10);
+    expect(chapters.map<[string, number, number]>(({ id, start, end }) => [id, start, end]))
+      .toEqual(parts.map(([, id, start, end]) => [id, toSeconds(start), toSeconds(end)]));
+    expect(frameAt(120).scene.id).toBe('S17');
+    const retimed = text.slice(text.indexOf('### 03｜'), text.indexOf('## 3.'));
+    const cuePairs = [...retimed.matchAll(/^\| \*\*S\d{2}\*\*[^|]*\|[^|]*\| (.*?)<br>(.*?) \|/gm)];
+    expect(cuePairs).toHaveLength(43);
+    expect(scenes.slice(16).map((scene) => scene.cues.map(([, caption]): string => caption)))
+      .toEqual(cuePairs.map(([, first, second]) => [first, second]));
     for (const [i, scene] of scenes.entries()) {
       expect<string>(frameAt(scene.start).scene.id).toBe(`S${String(i + 1).padStart(2, '0')}`);
       expect(frameAt(scene.end - 1 / FPS).scene.id).toBe(scene.id);
@@ -28,8 +40,8 @@ describe('approved 00–02 timeline', () => {
 
   test('keeps the last picture and subtitle visible at the end', () => {
     const last = frameAt(duration);
-    expect(last.scene.id).toBe('S16');
-    expect(last.frame).toBe(3599);
+    expect(last.scene.id).toBe('S59');
+    expect(last.frame).toBe(13049);
     expect(frameAt(duration + 1)).toEqual(last);
     expect(frameAt(-3)).toEqual(frameAt(0));
     expect(frameAt(NaN)).toEqual(frameAt(0));
@@ -77,10 +89,11 @@ describe('playback clock', () => {
     expect(clock.current(3000)).toBe(duration);
     clock.play(3000);
     expect(clock.current(3000)).toBe(0);
-    expect(clock.current(125000)).toBe(duration);
-    clock.pause(125000);
+    const afterEnd = 3000 + duration * 1000 + 500;
+    expect(clock.current(afterEnd)).toBe(duration);
+    clock.pause(afterEnd);
     expect(clock.playing).toBe(false);
-    clock.seek(-8, 229000);
-    expect(clock.current(229000)).toBe(0);
+    clock.seek(-8, afterEnd + 2000);
+    expect(clock.current(afterEnd + 2000)).toBe(0);
   });
 });

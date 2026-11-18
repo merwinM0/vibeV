@@ -1,8 +1,8 @@
-# Hadoop Ecosystem · Vibe Web Preview
+# Hadoop Ecosystem · Vibe Web Film
 
 [中文](README.md) | English
 
-An animated introduction to Hadoop. Follow a batch of preprocessed e-commerce orders to see how data is organized, stored, and managed in HDFS. The V1.1 preview covers **chapters 00–02 (S01–S16, 00:00–02:00)**. The revised pacing uses visible changes in shape and routing to show the order surge, file splitting, reads and writes, and recovery. It plays in the browser in 16:9 landscape, with no audio or video export.
+An animated introduction to Hadoop. Follow a batch of preprocessed e-commerce orders to see how data is organized, stored, and managed in HDFS. V1.2 covers **chapters 00–09: 59 shots in 7:15**. Chapters 00–02 keep their pacing; chapters 03–09 continue at 02:00, showing how keys converge in Shuffle, how Hive prunes partitions, how HBase looks up a RowKey, and how the architecture fits together. It plays in the browser in 16:9 landscape, with no audio or video export.
 
 ## Quick start
 
@@ -24,4 +24,4 @@ bun run preview
 
 `build` writes to `dist/`; `preview` serves the static build for local checks.
 
-- [V1.1 storyboard (Chinese)](Hadoop生态圈_Vibe视频_完整分镜表.md) · [Roadmap](READMAP.md) · [Development guide](AGENTS.md)
+- [V1.2 storyboard (Chinese)](Hadoop生态圈_Vibe视频_完整分镜表.md) · [Roadmap](READMAP.md) · [Development guide](AGENTS.md)

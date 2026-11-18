@@ -2,12 +2,16 @@ import { chapters, type scenes, type SceneId } from '../timeline';
 import { color, H, Ink, noise, W, type Painter } from './ink';
 import { common, directories, ecosystem, intake, opening, ordersTable, smallFiles } from './intro';
 import { acrossRacks, highAvailability, outage, pipeline, readPath, recover, split, warehouse, writePath } from './hdfs';
+import { compute } from './compute';
+import { query } from './query';
+import { operations } from './operations';
 
 const paintings = {
   S01: opening, S02: intake, S03: ecosystem, S04: common,
   S05: ordersTable, S06: directories, S07: smallFiles,
   S08: warehouse, S09: split, S10: writePath, S11: pipeline, S12: acrossRacks,
   S13: readPath, S14: outage, S15: recover, S16: highAvailability,
+  ...compute, ...query, ...operations,
 } satisfies Record<SceneId, Painter>;
 
 type Scene = typeof scenes[number];

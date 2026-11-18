@@ -105,7 +105,8 @@ const map = {
   hbase: { x: 1218, w: 223, title: 'HBase', label: 'RowKey 点查', hue: color.hbase },
 };
 
-function factoryMap(p: Ink, t: number, common: boolean) {
+export function factoryMap(p: Ink, t: number, common: boolean, full = false, timeScale = 1) {
+  t *= timeScale;
   const layer = (delay: number, draw: () => void) => {
     const q = common ? 1 : p.progress(t, delay, delay + .75);
     p.alpha(common ? .61 : q, () => p.move(960, 575, 0, 94 * (1 - q), .95 + .05 * q, draw));
@@ -151,7 +152,8 @@ function factoryMap(p: Ink, t: number, common: boolean) {
     p.text('ZooKeeper', 143, 570, 28, color.zk, 'left', 700, true);
     p.text('协调（非数据通道）', 142, 606, 21);
     p.route([[351, 431], [477, 431]], 'control', null, !common);
-    p.route([[351, 578], [394, 578], [394, 779], [1512, 779], [1512, 475], [1382, 475], [1382, 448]], 'control', null, false);
+    const zY = full ? 825 : 779;
+    p.route([[351, 578], [394, 578], [394, zY], [1512, zY], [1512, 475], [1382, 475], [1382, 448]], 'control', null, full && links);
     const a = [[1100, 335], [1100, 325], [1490, 325], [1490, 406], [1551, 406]] as const;
     const b = [[1441, 398], [1481, 398], [1481, 517], [1551, 517]] as const;
     p.route(a, 'data', null, links && !common);
@@ -170,21 +172,22 @@ function factoryMap(p: Ink, t: number, common: boolean) {
       p.impact(1588, 522, t - 5.4, color.hbase, 99);
     }
   });
-  if (common) {
-    const rise = p.progress(t, 0, 1.4);
-    const from = 741 + (p.motion ? 104 * (1 - rise) : 0);
+  if (common || full) {
+    const baseTime = full ? t - 2.2 : t;
+    const rise = p.progress(baseTime, 0, 1.4);
+    const from = 741 + (p.motion ? (full ? 49 : 104) * (1 - rise) : 0);
     p.alpha(.24 + .76 * rise, () => {
       p.glow(930, from + 45, 320, '#4b8cad44');
       p.panel(477, from, 964, 81, color.dep);
       p.text('Hadoop Common', 506, from + 51, 35, color.ink, 'left', 700, true);
       p.text('共享库  /  工具  /  基础接口', 869, from + 51, 30, color.dep);
     });
-    p.impact(960, from + 72, t - 1.4, color.dep, 380);
-    p.route([[660, from], [660, 684]], 'dependency', null, t >= 1.4);
-    p.route([[557, from], [443, from], [443, 526], [477, 526]], 'dependency', null, t >= 1.9);
-    p.route([[512, from], [421, from], [421, 397], [477, 397]], 'dependency', null, t >= 2.6);
+    p.impact(960, from + 72, baseTime - 1.4, color.dep, 380);
+    p.route([[660, from], [660, 684]], 'dependency', null, baseTime >= 1.4);
+    p.route([[557, from], [443, from], [443, 526], [477, 526]], 'dependency', null, baseTime >= 1.9);
+    p.route([[512, from], [421, from], [421, 397], [477, 397]], 'dependency', null, baseTime >= 2.6);
   }
-  p.legend([['data', '数据读写'], ['control', '资源 / 控制'], ['dependency', '依赖 / 间接关系']]);
+  p.legend([['data', '数据读写'], ['control', '资源 / 控制'], ['dependency', '依赖 / 间接关系']], 114, full ? 874 : 856);
 }
 export const ecosystem: Painter = (p, t) => factoryMap(p, t, false);
 export const common: Painter = (p, t) => factoryMap(p, t, true);

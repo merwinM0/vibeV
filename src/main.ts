@@ -21,6 +21,7 @@ const timeLabel = element('time', HTMLElement);
 const durationLabel = element('duration', HTMLElement);
 const fullscreen = element('expand', HTMLButtonElement);
 const chapterList = element('chapters', HTMLOListElement);
+const chapterCount = element('chapter-count', HTMLElement);
 const motion = matchMedia('(prefers-reduced-motion: reduce)');
 
 function attach(ctx: CanvasRenderingContext2D) {
@@ -40,6 +41,7 @@ function attach(ctx: CanvasRenderingContext2D) {
     return node;
   };
 
+  chapterCount.textContent = `${chapters.length} 章`;
   for (const chapter of chapters) {
     const row = document.createElement('li');
     const button = document.createElement('button');
@@ -71,7 +73,11 @@ function attach(ctx: CanvasRenderingContext2D) {
       player.dataset.scene = lastTitle = scene.id;
     }
     if (scene.chapter !== lastChapter) {
-      chapterButtons.get(scene.chapter)?.setAttribute('aria-current', 'true');
+      const active = chapterButtons.get(scene.chapter);
+      if (active) {
+        active.setAttribute('aria-current', 'true');
+        keepChapterInView(active);
+      }
       if (lastChapter) chapterButtons.get(lastChapter)?.removeAttribute('aria-current');
       lastChapter = scene.chapter;
     }
@@ -87,6 +93,15 @@ function attach(ctx: CanvasRenderingContext2D) {
       play.dataset.mode = mode;
       playLabel.textContent = mode === 'pause' ? '暂停' : mode === 'replay' ? '重播' : '播放';
     }
+  }
+
+  function keepChapterInView(button: HTMLButtonElement) {
+    if (chapterList.scrollHeight <= chapterList.clientHeight) return;
+    const viewport = chapterList.getBoundingClientRect();
+    const row = button.getBoundingClientRect();
+    // Scroll only the list; jumping from the timeline must not move the page.
+    if (row.bottom > viewport.bottom) chapterList.scrollTop += row.bottom - viewport.bottom;
+    else if (row.top < viewport.top) chapterList.scrollTop += row.top - viewport.top;
   }
 
   function tick(now: number) {
@@ -159,4 +174,4 @@ function attach(ctx: CanvasRenderingContext2D) {
 
 const ctx = canvas.getContext('2d', { alpha: false });
 if (ctx) attach(ctx);
-else captionNode.textContent = transcript.textContent = '当前浏览器无法绘制动画。请在支持 Canvas 的浏览器中打开样片。';
+else captionNode.textContent = transcript.textContent = '当前浏览器无法绘制动画。请在支持 Canvas 的浏览器中打开。';

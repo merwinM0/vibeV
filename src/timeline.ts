@@ -1,9 +1,12 @@
+import { laterChapters, laterScenes } from './continuation';
+
 export const FPS = 30;
-export const duration = 120;
+export const duration = laterChapters[laterChapters.length - 1].end;
 export const chapters = [
   { id: '00', start: 0, end: 26, title: '开场与全局问题', note: '一批订单，两个问题' },
   { id: '01', start: 26, end: 48, title: '数据入湖与组织', note: '订单明细、目录与文件' },
-  { id: '02', start: 48, end: duration, title: 'HDFS：分布式存储', note: '块、副本与故障恢复' },
+  { id: '02', start: 48, end: laterScenes[0].start, title: 'HDFS：分布式存储', note: '块、副本与故障恢复' },
+  ...laterChapters,
 ] as const;
 
 export type ChapterId = typeof chapters[number]['id'];
@@ -78,6 +81,7 @@ const story = [
     [3.3, '原 Active 失联，满足条件时可切换。'],
     [5.1, '接任的是目录服务，文件仍留在 DataNode。'],
   ] },
+  ...laterScenes,
 ] as const satisfies ReadonlyArray<{ id: string; chapter: ChapterId; start: number; title: string; cues: readonly Cue[] }>;
 
 export type SceneId = typeof story[number]['id'];
