@@ -2,7 +2,7 @@
 
 [中文](README.md) | English
 
-An animated introduction to Hadoop. Follow a batch of preprocessed e-commerce orders to see how data is organized, stored, and managed in HDFS. This preview covers **chapters 00–02 of the storyboard (S01–S16, 00:00–03:44)**. It plays in the browser in 16:9 landscape, with no narration, music, sound effects, or video export.
+An animated introduction to Hadoop. Follow a batch of preprocessed e-commerce orders to see how data is organized, stored, and managed in HDFS. The V1.1 preview covers **chapters 00–02 (S01–S16, 00:00–02:00)**. The revised pacing uses visible changes in shape and routing to show the order surge, file splitting, reads and writes, and recovery. It plays in the browser in 16:9 landscape, with no audio or video export.
 
 ## Quick start
 
@@ -24,4 +24,4 @@ bun run preview
 
 `build` writes to `dist/`; `preview` serves the static build for local checks.
 
-- [Original storyboard (Chinese)](Hadoop生态圈_Vibe视频_完整分镜表.md) · [Roadmap](READMAP.md) · [Development guide](AGENTS.md)
+- [V1.1 storyboard (Chinese)](Hadoop生态圈_Vibe视频_完整分镜表.md) · [Roadmap](READMAP.md) · [Development guide](AGENTS.md)

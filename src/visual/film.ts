@@ -1,5 +1,5 @@
 import { chapters, type scenes, type SceneId } from '../timeline';
-import { color, eased, H, Ink, noise, W, type Painter } from './ink';
+import { color, H, Ink, noise, W, type Painter } from './ink';
 import { common, directories, ecosystem, intake, opening, ordersTable, smallFiles } from './intro';
 import { acrossRacks, highAvailability, outage, pipeline, readPath, recover, split, warehouse, writePath } from './hdfs';
 
@@ -45,6 +45,7 @@ export class Film {
 
   draw(scene: Scene, t: number, motion: boolean) {
     const p = this.p;
+    p.motion = motion;
     const chapter = chapters.find((part) => part.id === scene.chapter);
     p.ctx.drawImage(this.backdrop, 0, 0);
     p.rect(97, 97, 48, 26, '#76dcfa26', '#76dcfa67', 3);
@@ -58,7 +59,7 @@ export class Film {
     p.ctx.beginPath();
     p.ctx.rect(96, 282, 1728, 607);
     p.ctx.clip();
-    p.alpha(scene.id === 'S01' || !motion ? 1 : .83 + .17 * eased(t, 0, .46), () => paintings[scene.id](p, t, motion));
+    paintings[scene.id](p, t, motion);
     p.ctx.restore();
   }
 }

@@ -23,7 +23,61 @@ export const noise = (i: number) => {
 };
 
 export class Ink {
+  motion = true;
+
   constructor(readonly ctx: CanvasRenderingContext2D) {}
+
+  // Scale/move illustration only; caption and section header stay anchored.
+  move(x: number, y: number, dx: number, dy: number, zoom: number, draw: () => void) {
+    const c = this.ctx;
+    c.save();
+    if (this.motion) {
+      c.translate(x + dx, y + dy);
+      c.scale(zoom, zoom);
+      c.translate(-x, -y);
+    }
+    draw();
+    c.restore();
+  }
+
+  progress(t: number, from: number, to: number) {
+    return this.motion ? eased(t, from, to) : Number(t >= (from + to) / 2);
+  }
+
+  impact(x: number, y: number, time: number, hue = color.data, size = 72) {
+    if (!this.motion || time < 0 || time >= .62) return;
+    const q = eased(time, 0, .62);
+    this.alpha((1 - q) * .74, () => {
+      const c = this.ctx;
+      c.beginPath();
+      c.ellipse(x, y, size * (.26 + .74 * q), size * (.10 + .25 * q), 0, 0, Math.PI * 2);
+      c.lineWidth = 3;
+      c.strokeStyle = hue;
+      c.stroke();
+    });
+  }
+
+  // Uses the actual route geometry. Solid data carries a cube; controls stay dashed.
+  transfer(points: readonly Point[], kind: PathKind, t: number, from: number, to: number, size = 27) {
+    if (t < from || t >= to) return;
+    const q = eased(t, from, to);
+    const [x, y] = this.motion ? along(points, q) : points[q < .5 ? 0 : points.length - 1];
+    const hue = kind === 'data' ? color.data : color.ctl;
+    if (kind === 'data') {
+      if (this.motion) {
+        for (let i = 3; i > 0; i--) {
+          if (q < i * .027) continue;
+          const [tx, ty] = along(points, q - i * .027);
+          this.alpha(.12 / i, () => this.cube(tx, ty, size, hue));
+        }
+      }
+      this.cube(x, y, size, hue);
+    } else {
+      this.rect(x - 13, y - 9, 26, 18, '#483929', hue, 3);
+      this.line([[x - 6, y - 2], [x + 6, y - 2]], hue, 2);
+      this.line([[x - 6, y + 3], [x + 3, y + 3]], hue, 2);
+    }
+  }
 
   text(value: string, x: number, y: number, size = 32, fill = color.ink,
     align: CanvasTextAlign = 'left', weight = 600, technical = false) {
