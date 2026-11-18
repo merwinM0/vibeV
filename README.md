@@ -24,4 +24,4 @@ bun run preview
 
 `build` 输出到 `dist/`；`preview` 用于本地检查静态构建。
 
-- [分镜 V1.2](Hadoop生态圈_Vibe视频_完整分镜表.md) · [路线图](READMAP.md) · [工程约定](AGENTS.md)
+- [分镜 V1.2](Hadoop生态圈_Vibe视频_完整分镜表.md) · [中文配音稿（仅文稿）](docs/配音稿.md) · [路线图](READMAP.md) · [工程约定](AGENTS.md)

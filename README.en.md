@@ -24,4 +24,4 @@ bun run preview
 
 `build` writes to `dist/`; `preview` serves the static build for local checks.
 
-- [V1.2 storyboard (Chinese)](Hadoop生态圈_Vibe视频_完整分镜表.md) · [Roadmap](READMAP.md) · [Development guide](AGENTS.md)
+- [V1.2 storyboard (Chinese)](Hadoop生态圈_Vibe视频_完整分镜表.md) · [Mandarin narration script (text only)](docs/配音稿.md) · [Roadmap](READMAP.md) · [Development guide](AGENTS.md)
