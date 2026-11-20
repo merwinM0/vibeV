@@ -2,18 +2,18 @@ import { drawAvatar } from '../../avatar/draw';
 import { ease, phaseLength, poseAt } from '../../avatar/motion';
 import { parts, skinUV } from '../../avatar/skin';
 import type { Part, Skin } from '../../avatar/skin';
-import { narrationClips } from './narration';
+import { actionFrame, captionCues, fps } from './narration';
 
+export { fps };
 export const width = 1920;
 export const height = 1080;
-export const fps = 30;
 export const frameCount = 900;
 export const duration = frameCount / fps;
 export const shots = [
   { start: 0, title: '一张皮肤，怎么走起来？' },
-  { start: 114, title: '先找出六个部件' },
-  { start: 300, title: '抬手是绕肩旋转' },
-  { start: 486, title: '走路时，两组肢体交替' },
+  { start: 84, title: '先找出六个部件' },
+  { start: 288, title: '抬手是绕肩旋转' },
+  { start: 469, title: '走路时，两组肢体交替' },
   { start: 672, title: '一张皮肤，演下一幕' },
 ] as const;
 
@@ -22,11 +22,7 @@ export function sampleFilm(requestedFrame: number) {
   let index = 0;
   while (index + 1 < shots.length && shots[index + 1].start <= frame) index++;
   const shot = shots[index];
-  let caption = '';
-  for (const cue of narrationClips) {
-    if (cue.atFrame > frame) break;
-    if (cue.atFrame >= shot.start) caption = cue.caption;
-  }
+  const caption = captionCues.find(({ start, end }) => start <= frame && frame < end)?.caption ?? '';
   return { frame, index, shot, caption, time: (frame - shot.start) / fps };
 }
 
@@ -87,24 +83,23 @@ function atlas(ctx: CanvasRenderingContext2D, skin: Skin, x: number, y: number, 
 }
 
 function opening(ctx: CanvasRenderingContext2D, skin: Skin, t: number) {
-  const stop = ease(.15, 3.3, t);
+  const stop = ease(.15, 2.45, t);
   atlas(ctx, skin, 219, 340, 5.5);
   label(ctx, '64 × 64 像素', 219, 763, 32, palette.muted, 650);
   trace(ctx, [[665, 518], [866, 518], [846, 500], [866, 518], [846, 536]], palette.accent, 4);
   trace(ctx, [[994, 799], [1675, 799]], palette.rule);
   const x = 1514 - stop * 282;
   ground(ctx, x, 793, 144);
-  drawAvatar(ctx, skin, { x, y: 791, scale: 14.7, yaw: -.53 + stop * .64, action: 'walk', time: t, intensity: 1 - ease(2.6, 3.65, t) });
+  drawAvatar(ctx, skin, { x, y: 791, scale: 14.7, yaw: -.53 + stop * .64, action: 'walk', time: t, intensity: 1 - ease(1.9, 2.65, t) });
   ctx.save();
   ctx.textAlign = 'center';
   label(ctx, '完整角色', x, 851, 30, palette.muted);
   ctx.restore();
 }
 
-function partsScene(ctx: CanvasRenderingContext2D, skin: Skin, t: number) {
+function partsScene(ctx: CanvasRenderingContext2D, skin: Skin, t: number, frame: number) {
   // Head, torso and then the four limbs follow the order of the narration.
-  const changes = [.7, 1.55, 2.38, 2.78, 3.18, 3.58];
-  const index = changes.reduce((last, at, i) => t >= at ? i : last, -1);
+  const index = actionFrame.parts.reduce((last, at, i) => frame >= at ? i : last, -1);
   const part = parts[index];
   atlas(ctx, skin, 203, 304, 7.25, part);
   label(ctx, '皮肤展开图', 202, 824, 30, palette.muted);
@@ -117,8 +112,8 @@ function partsScene(ctx: CanvasRenderingContext2D, skin: Skin, t: number) {
   drawAvatar(ctx, skin, { x: 1361, y: 803, scale: 14.8, yaw: -.32 + .76 * ease(.1, 5.5, t), action: 'look', time: t * .85, intensity: .4, highlight: part });
 }
 
-function hingeScene(ctx: CanvasRenderingContext2D, skin: Skin, t: number) {
-  const actionTime = Math.min(1.5, Math.max(0, t - 3.36));
+function hingeScene(ctx: CanvasRenderingContext2D, skin: Skin, _t: number, frame: number) {
+  const actionTime = Math.min(1.5, .18 + Math.max(0, (frame - actionFrame.shoulder) / fps));
   const angle = poseAt('point', actionTime).angles.leftArm[2];
   const x = 1196, y = 475, size = 187;
   ground(ctx, 588, 808);
@@ -136,10 +131,10 @@ function hingeScene(ctx: CanvasRenderingContext2D, skin: Skin, t: number) {
   trace(ctx, [[1290, 600], [1256, 600], [x + 14, y + 14]], palette.rule, 3);
 }
 
-function walkScene(ctx: CanvasRenderingContext2D, skin: Skin, t: number) {
+function walkScene(ctx: CanvasRenderingContext2D, skin: Skin, _t: number, frame: number) {
   // Hold each opposite-limb pose until the narration calls for the next step.
-  const step = ease(.15, 1.45, t);
-  const swap = ease(3.56, 4.1, t);
+  const step = ease(actionFrame.firstStep, actionFrame.firstStep + 24, frame);
+  const swap = ease(actionFrame.nextStep, actionFrame.nextStep + 27, frame);
   const stride = phaseLength * (.25 * step + .5 * swap);
   const x = 540 + 82 * step + 120 * swap;
   for (let i = 0; i < 13; i++) {
@@ -160,19 +155,20 @@ function walkScene(ctx: CanvasRenderingContext2D, skin: Skin, t: number) {
   });
 }
 
-function closing(ctx: CanvasRenderingContext2D, skin: Skin, t: number) {
+function closing(ctx: CanvasRenderingContext2D, skin: Skin, t: number, frame: number) {
   ground(ctx, 577, 814);
-  drawAvatar(ctx, skin, { x: 577, y: 811, scale: 15.8, yaw: .47 * (1 - ease(0, .55, t)), action: 'nod', time: Math.max(0, t - .18), intensity: 1 - ease(4.1, 5.2, t) });
+  drawAvatar(ctx, skin, { x: 577, y: 811, scale: 15.8, yaw: .47 * (1 - ease(0, .55, t)), action: 'nod', time: .2 + Math.max(0, (frame - actionFrame.nod) / fps) });
+  if (frame < actionFrame.texture) return;
   rect(ctx, 903, 342, 820, 423, palette.accent, 23);
   label(ctx, '贴图定外观', 972, 483, 72, white, 760);
   trace(ctx, [[971, 534], [1639, 534]], '#70a0a4', 2);
-  label(ctx, '关节定动作', 972, 652, 72, white, 760);
+  if (frame >= actionFrame.joints) label(ctx, '关节定动作', 972, 652, 72, white, 760);
 }
 
 const painters = [opening, partsScene, hingeScene, walkScene, closing];
 
 export function drawFilm(ctx: CanvasRenderingContext2D, skin: Skin, frame: number) {
-  const { index, shot, caption, time } = sampleFilm(frame);
+  const { index, shot, caption, time, frame: safeFrame } = sampleFilm(frame);
   ctx.save();
   rect(ctx, 0, 0, width, height, palette.paper);
   ctx.fillStyle = '#cadfe3';
@@ -182,13 +178,17 @@ export function drawFilm(ctx: CanvasRenderingContext2D, skin: Skin, frame: numbe
   label(ctx, 'vibeV 图解', 114, 92, 30, palette.muted, 700);
   label(ctx, `0${index + 1} / 05`, 1690, 92, 27, palette.muted);
   label(ctx, shot.title, 114, 189, 53, palette.ink, 750);
-  painters[index](ctx, skin, time);
+  painters[index](ctx, skin, time, safeFrame);
   if (caption) {
-    ctx.font = `650 34px ${textFont}`;
-    const size = ctx.measureText(caption).width + 72;
-    rect(ctx, (width - size) / 2, 937, size, 74, palette.ink, 15);
+    ctx.font = `700 44px ${textFont}`;
     ctx.textAlign = 'center';
-    label(ctx, caption, width / 2, 986, 34, white, 650);
+    ctx.textBaseline = 'alphabetic';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 4; // Painting the fill afterwards leaves a 2 px outer outline at 1080p.
+    ctx.strokeStyle = '#000';
+    ctx.fillStyle = white;
+    ctx.strokeText(caption, width / 2, 991);
+    ctx.fillText(caption, width / 2, 991);
   }
   ctx.restore();
 }

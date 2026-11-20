@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test';
 import { dimensions, parts, detectModel, skinUV } from '../avatar/skin';
 import { phaseLength, poseAt, rotate } from '../avatar/motion';
 import { duration, fps, frameCount, sampleFilm, shots } from '../works/mc-avatar/film';
-import { narrationClips } from '../works/mc-avatar/narration';
+import { actionFrame, captionCues, narrationClips, sourceFrame } from '../works/mc-avatar/narration';
 
 test('both arm layouts preserve the atlas bounds and the second skin layer', () => {
   expect(dimensions('leftArm', 'slim')).toEqual([3, 12, 4]);
@@ -60,20 +60,40 @@ test('the sample spans exactly 30 seconds, with stable seek results across all c
   expect(sampleFilm(-100)).toEqual(sampleFilm(0));
 });
 
-test('each narration cue switches at its authored frame and fits within its shot', () => {
+test('subtitles start and clear at the spoken boundaries, not at the edit points', () => {
   let previousEnd = 0;
   let inputEnd = 0;
   expect(sampleFilm(0).caption).toBe('');
-  for (const clip of narrationClips) {
-    const { index, caption } = sampleFilm(clip.atFrame);
-    const end = clip.atFrame + (clip.outPoint - clip.inPoint) * fps;
+  for (const [i, clip] of narrationClips.entries()) {
+    const cue = captionCues[i];
+    const { index } = sampleFilm(clip.atFrame);
+    const end = sourceFrame(clip, clip.outPoint);
+    const shotEnd = shots[index + 1]?.start ?? frameCount;
     expect(clip.inPoint).toBeGreaterThanOrEqual(inputEnd);
     expect(clip.atFrame).toBeGreaterThanOrEqual(previousEnd);
-    expect(end).toBeLessThanOrEqual(shots[index + 1]?.start ?? frameCount);
-    expect(caption).toBe(clip.caption);
-    expect(sampleFilm(clip.atFrame - 1).caption).not.toBe(clip.caption);
+    expect(clip.speech[0]).toBeGreaterThan(clip.inPoint);
+    expect(clip.speech[1]).toBeLessThanOrEqual(clip.outPoint);
+    expect(end).toBeLessThanOrEqual(shotEnd);
+    expect(cue.start).toBeGreaterThan(clip.atFrame);
+    expect(cue.end).toBeLessThanOrEqual(shotEnd);
+    expect(sampleFilm(cue.start - 1).caption).not.toBe(clip.caption);
+    expect(sampleFilm(cue.start).caption).toBe(clip.caption);
+    expect(sampleFilm(cue.end - 1).caption).toBe(clip.caption);
+    expect(sampleFilm(cue.end).caption).not.toBe(clip.caption);
     previousEnd = end;
     inputEnd = clip.outPoint;
   }
-  expect(sampleFilm(frameCount - 1).caption).toBe('此内容由 AI 生成。');
+  expect(sampleFilm(0.5 * fps).caption).toBe('');
+  expect(sampleFilm(17).caption).toBe('一张小小的皮肤，');
+  expect(sampleFilm(885).caption).toBe('此内容由 AI 生成。');
+});
+
+test('key gestures occur in their spoken cue, never in the adjacent shot', () => {
+  expect(sampleFilm(actionFrame.parts[0]).caption).toContain('头、身体和四肢');
+  expect(sampleFilm(actionFrame.shoulder).caption).toContain('绕肩膀');
+  expect(sampleFilm(actionFrame.firstStep).caption).toContain('左腿和右臂');
+  expect(sampleFilm(actionFrame.nextStep).caption).toContain('下一步');
+  expect(sampleFilm(actionFrame.nod).caption).toContain('点头');
+  expect(sampleFilm(actionFrame.texture).caption).toContain('贴图决定外观');
+  expect(sampleFilm(actionFrame.joints).caption).toContain('关节决定动作');
 });

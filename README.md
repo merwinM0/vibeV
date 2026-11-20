@@ -19,7 +19,7 @@ bun run dev
 
 ### MC 角色动画样片
 
-在首页打开「一张皮肤，怎么让角色动起来？」（`/works/mc-avatar/`）。30 秒样片只提供配音版，字幕和动作跟随音轨；下方可单独预览动作、转动视角或本地换一张 64×64 PNG 皮肤。
+在首页打开「一张皮肤，怎么让角色动起来？」（`/works/mc-avatar/`）。30 秒样片只提供配音版，白字细黑描边字幕按实际口播开合，角色动作跟随关键词；下方可单独预览动作、转动视角或本地换一张 64×64 PNG 皮肤。
 
 需要重新剪接原始录音时，使用带 libmp3lame 的 FFmpeg 运行 `bun run avatar:dub`。导出时，安装 Chromium 和带 libx264 的 FFmpeg，运行 `bun run avatar:render`；如果 Chromium 不在 `PATH`，用 `env CHROMIUM_BIN=/你的浏览器路径 bun run avatar:render`。生成的 `exports/mc-avatar-30s.mp4` 是 1080p、30 fps 的配音版。详见 [分镜与复用说明](docs/MC角色样片.md)。
 

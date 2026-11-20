@@ -18,7 +18,7 @@
 .picture canvas { display: block; width: 100%; height: 100%; }
 .picture noscript p { position: absolute; inset: 25% 10%; color: white; }
 .frame-captions { position: absolute; inset-inline: 5%; bottom: 8.9%; display: grid; justify-items: center; pointer-events: none; }
-.frame-captions p { max-width: 100%; margin: 0; padding: .35em .62em .4em; font-size: 2.22cqw; line-height: 1.36; font-weight: 680; color: #fff; background: var(--mast); border: 1px solid var(--control-edge); border-radius: .36em; text-align: center; text-wrap: balance; }
+.frame-captions p { max-width: 100%; margin: 0; font-size: 2.29cqw; line-height: 1.36; font-weight: 700; color: #fff; -webkit-text-stroke: .09em #000; paint-order: stroke fill; text-align: center; text-wrap: balance; }
 .frame-captions p:empty { display: none; }
 .controls { padding: 3px 16px 10px; }
 .seek-track { position: relative; isolation: isolate; }
