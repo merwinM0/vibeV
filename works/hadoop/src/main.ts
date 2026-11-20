@@ -1,7 +1,6 @@
-import { PlaybackClock } from './clock';
 import { chapterReel } from './chapter-reel';
-import { narrationFrameAt } from './narration';
-import { chapters, duration, frameAt, timecode } from './timeline';
+import { narrationChapters, narrationDuration as duration, narrationFrameAt } from './narration';
+import { timecode } from './timeline';
 import { Film } from './visual/film';
 
 function element<T extends HTMLElement>(id: string, kind: { new(): T }): T {
@@ -28,40 +27,25 @@ function attach(ctx: CanvasRenderingContext2D) {
   const audio = element('narration', HTMLAudioElement);
   const mute = element('mute', HTMLButtonElement);
   const audioStatus = element('audio-status', HTMLParagraphElement);
-  const fullVersion = new URLSearchParams(location.search).get('version') === 'full';
-  if (fullVersion) {
-    element('dubbed-edition', HTMLAnchorElement).removeAttribute('aria-current');
-    element('full-edition', HTMLAnchorElement).setAttribute('aria-current', 'page');
-    element('silent', HTMLElement).hidden = false;
-  } else {
-    const src = audio.getAttribute('data-src');
-    if (src) audio.src = src;
-    mute.hidden = false;
-  }
-
   const film = new Film(ctx);
-  const clock = new PlaybackClock();
   const totalLabel = timecode(duration);
-  const timelineFrameAt = fullVersion ? frameAt : narrationFrameAt;
   let raf = 0;
   let lastFrame = -1;
   let lastCaption = '';
   let reachedEnd = false;
-  const reel = chapterReel(chapterList, chapters, jump);
+  const reel = chapterReel(chapterList, narrationChapters, jump);
 
-  // The edited track has the original storyboard's length and time coordinates.
-  // Read the media clock so buffering/seeking cannot pull sound and picture apart.
-  function current(now: number) {
-    if (fullVersion) return clock.current(now);
+  // The final recording is the only playback clock.
+  function current() {
     return audio.ended || reachedEnd ? duration : Math.min(duration, audio.currentTime);
   }
 
   function playing() {
-    return fullVersion ? clock.playing : !audio.paused && !audio.ended && !audio.error;
+    return !audio.paused && !audio.ended && !audio.error;
   }
 
   function paint(seconds: number) {
-    const { scene, frame, elapsed, caption } = timelineFrameAt(seconds);
+    const { scene, frame, elapsed, caption } = narrationFrameAt(seconds);
     if (frame !== lastFrame) {
       film.draw(scene, elapsed, !motion.matches);
       lastFrame = frame;
@@ -86,68 +70,57 @@ function attach(ctx: CanvasRenderingContext2D) {
     }
   }
 
-  function tick(now: number) {
+  function tick() {
     raf = 0;
-    const seconds = current(now);
-    if (fullVersion && seconds === duration) clock.pause(now);
-    paint(seconds);
+    paint(current());
     if (playing()) raf = requestAnimationFrame(tick);
   }
 
-  function render(now = performance.now()) {
+  function render() {
     cancelAnimationFrame(raf);
-    tick(now);
+    tick();
   }
 
   function jump(seconds: number) {
-    const now = performance.now();
-    if (fullVersion) clock.seek(seconds, now);
-    else {
-      const target = Math.max(0, Math.min(duration, seconds));
-      reachedEnd = target === duration;
-      if (reachedEnd) audio.pause();
-      audio.currentTime = reachedEnd && Number.isFinite(audio.duration) ? audio.duration : target;
-    }
-    render(now);
+    const target = Math.max(0, Math.min(duration, seconds));
+    reachedEnd = target === duration;
+    if (reachedEnd) audio.pause();
+    audio.currentTime = reachedEnd && Number.isFinite(audio.duration) ? audio.duration : target;
+    render();
   }
 
   function audioFailed() {
-    audioStatus.textContent = '配音无法播放，请刷新重试，或切换到无声版。';
+    audioStatus.textContent = '配音无法播放，请刷新页面后重试。';
     audioStatus.hidden = false;
     render();
   }
 
   function toggle() {
-    const now = performance.now();
-    if (fullVersion) {
-      if (clock.playing) clock.pause(now);
-      else clock.play(now);
-    } else if (playing()) audio.pause();
+    if (playing()) audio.pause();
     else {
-      if (current(now) === duration) jump(0);
+      if (current() === duration) jump(0);
       audioStatus.hidden = true;
       void audio.play().catch((error: unknown) => {
         if (!(error instanceof DOMException) || error.name !== 'AbortError') audioFailed();
       });
     }
-    render(now);
+    render();
   }
 
-  if (!fullVersion) {
-    for (const event of ['play', 'pause', 'seeked', 'ended']) audio.addEventListener(event, () => render());
-    audio.addEventListener('error', audioFailed);
-    mute.addEventListener('click', () => {
-      audio.muted = !audio.muted;
-      mute.setAttribute('aria-pressed', String(audio.muted));
-    });
-  }
+  for (const event of ['play', 'pause', 'seeked', 'ended']) audio.addEventListener(event, render);
+  audio.addEventListener('error', audioFailed);
+  audio.src = audio.dataset.src ?? '';
+  mute.addEventListener('click', () => {
+    audio.muted = !audio.muted;
+    mute.setAttribute('aria-pressed', String(audio.muted));
+  });
   play.addEventListener('click', toggle);
   seek.addEventListener('input', () => jump(seek.valueAsNumber));
   player.addEventListener('keydown', (event) => {
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.target !== player) return;
     if (event.key === ' ' && !event.repeat) toggle();
     else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-      jump(current(performance.now()) + (event.key === 'ArrowLeft' ? -5 : 5));
+      jump(current() + (event.key === 'ArrowLeft' ? -5 : 5));
     } else return;
     event.preventDefault();
   });

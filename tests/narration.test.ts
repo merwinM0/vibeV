@@ -1,66 +1,61 @@
 import { expect, test } from 'bun:test';
-import { narrationClips, narrationFrameAt } from '../works/hadoop/src/narration';
-import { duration, FPS, frameAt, scenes } from '../works/hadoop/src/timeline';
+import { narrationChapters, narrationCues, narrationDuration, narrationFrameAt, narrationShots, narrationTakes } from '../works/hadoop/src/narration';
+import { chapters, FPS } from '../works/hadoop/src/timeline';
 
-test('adding narration leaves every original animation frame and shot boundary unchanged', () => {
-  for (let i = 0; i <= duration * FPS; i++) {
-    const seconds = i / FPS;
-    const original = frameAt(seconds);
-    const narrated = narrationFrameAt(seconds);
-    expect(narrated.scene).toBe(original.scene);
-    expect(narrated.elapsed).toBe(original.elapsed);
-    expect(narrated.frame).toBe(original.frame);
+test('recordings and captions stay in source order with no storyboard-driven edits', () => {
+  expect(narrationTakes.map(({ file }) => file)).toEqual(['p1.mp3', 'p2.mp3', 'p3.mp3', 'p4.mp3']);
+  expect(narrationDuration).toBe(191.16);
+  let offset = 0;
+  for (const [i, take] of narrationTakes.entries()) {
+    const cues = narrationCues.filter((cue) => cue.take === i);
+    let previous = 0;
+    take.lines.forEach(([start, end], j) => {
+      expect(start).toBeGreaterThanOrEqual(previous);
+      expect(end).toBeGreaterThan(start);
+      expect(end).toBeLessThanOrEqual(take.keepSeconds);
+      expect(Math.abs(cues[j].startFrame / FPS - (offset + start))).toBeLessThanOrEqual(.5 / FPS + 1e-8);
+      previous = end;
+    });
+    offset += take.keepSeconds;
   }
+  expect(narrationFrameAt(52.65).caption).toBe('Shuffle 先分区，再传输排序。');
+  expect(narrationFrameAt(55.60).caption).toBe('局部求和可选。');
+  expect(narrationCues.filter(({ caption }) => caption.includes('AI 生成'))).toHaveLength(1);
 });
 
-test('each subtitle follows the measured speech rather than the edit point', () => {
-  let previousEnd = 0;
-  let previousCaptionEnd = 0;
-  expect(narrationClips).toHaveLength(73);
-  for (const clip of narrationClips) {
-    const start = clip.atFrame / FPS;
-    const end = start + clip.outPoint - clip.inPoint;
-    const { scene } = narrationFrameAt(start);
-    expect(clip.id).toBe(scene.id);
-    expect(start).toBeGreaterThanOrEqual(previousEnd);
-    expect(end).toBeLessThanOrEqual(scene.end);
-    expect(clip.inPoint).toBeLessThan(clip.speechIn);
-    expect(clip.speechIn).toBeLessThan(clip.speechOut);
-    expect(clip.speechOut).toBeLessThan(clip.outPoint);
-    expect(clip.startFrame).toBeGreaterThanOrEqual(previousCaptionEnd);
-    expect(clip.startFrame).toBeGreaterThan(clip.atFrame);
-    expect(clip.endFrame / FPS).toBeLessThanOrEqual(scene.end);
-    expect(narrationFrameAt((clip.startFrame - 1) / FPS).caption).not.toBe(clip.caption);
-    expect(narrationFrameAt(clip.startFrame / FPS).caption).toBe(clip.caption);
-    expect(narrationFrameAt((clip.endFrame - 1) / FPS).caption).toBe(clip.caption);
-    expect(narrationFrameAt(clip.endFrame / FPS).caption).not.toBe(clip.caption);
-    previousEnd = end;
-    previousCaptionEnd = clip.endFrame;
+test('captions follow speech at starts, gaps and take joins', () => {
+  for (const [i, cue] of narrationCues.entries()) {
+    const next = narrationCues[i + 1]?.startFrame ?? Infinity;
+    const end = Math.min(cue.endFrame, next);
+    expect(narrationFrameAt((cue.startFrame - 1) / FPS).caption).not.toBe(cue.caption);
+    expect(narrationFrameAt(cue.startFrame / FPS).caption).toBe(cue.caption);
+    expect(narrationFrameAt((end - 1) / FPS).caption).toBe(cue.caption);
+    expect(narrationFrameAt(cue.startFrame / FPS).scene.id).toBe(cue.id);
+    if (end < next) expect(narrationFrameAt(end / FPS).caption).toBe('');
   }
+  expect(narrationFrameAt(45.2).caption).toContain('MapReduce 或 Spark');
+  expect(narrationFrameAt(89.4).caption).toBe('报表回答卖多少，');
+  expect(narrationFrameAt(130.3).caption).toContain('Oozie');
+  expect(narrationFrameAt(190).caption).toBe('此内容由 AI 生成。');
+  expect(narrationFrameAt(narrationDuration + 1)).toEqual(narrationFrameAt(narrationDuration));
 });
 
-test('silent gaps do not replace a spoken line with a stale storyboard caption', () => {
-  expect(narrationFrameAt(71.6).caption).toBe('');
-  expect(narrationFrameAt(71.7).caption).toBe('再沿管线传副本，');
-  expect(narrationFrameAt(73.2).caption).toBe('');
-  expect(narrationFrameAt(136.25).caption).toBe('');
-  expect(narrationFrameAt(136.8).caption).toBe('再申请任务容器。');
-  // The unvoiced summary is visible before the spoken credit, not under it.
-  expect(narrationFrameAt(430).caption).toBe(frameAt(430).caption);
-  expect(narrationFrameAt(433.1).caption).toBe('此内容由 AI 生成。');
-  expect(narrationFrameAt(duration).caption).toBe('');
-});
-
-test('missing speech keeps the original captions; re-ordered lines follow the storyboard', () => {
-  const voiced = new Set(narrationClips.map(({ id }) => id));
-  const unvoiced = scenes.filter(({ id }) => !voiced.has(id));
-  expect(unvoiced.map(({ id }) => id)).toEqual(['S01', 'S03', 'S04', 'S05', 'S07', 'S20', 'S30', 'S32', 'S38']);
-  for (const scene of unvoiced) {
-    for (const [at] of scene.cues) expect(narrationFrameAt(scene.start + at)).toEqual(frameAt(scene.start + at));
+test('retimed visual beats and chapter navigation share a deterministic timeline', () => {
+  expect(narrationChapters.map(({ id }) => id)).toEqual(chapters.map(({ id }) => id));
+  for (const chapter of narrationChapters) {
+    expect(narrationFrameAt(chapter.start).scene.chapter).toBe(chapter.id);
+    const mediaTime = Math.floor(chapter.start * 1_000_000) / 1_000_000;
+    expect(narrationFrameAt(mediaTime).scene.chapter).toBe(chapter.id);
+    if (chapter.start > 0) expect(narrationFrameAt(chapter.start - 1 / FPS).scene.chapter).not.toBe(chapter.id);
   }
-  // The unrecorded direct DataNode write still has its original caption.
-  expect(narrationFrameAt(67)).toEqual(frameAt(67));
-  expect(narrationFrameAt(178.5).caption).toBe('局部求和可选。');
-  expect(narrationFrameAt(183.5).caption).toContain('Shuffle');
-  expect(narrationClips.filter(({ caption }) => caption.includes('AI 生成'))).toHaveLength(1);
+  for (const shot of narrationShots) {
+    expect(narrationFrameAt(shot.startFrame / FPS).elapsed).toBe(0);
+    for (const [i, beat] of shot.beats.entries()) {
+      if (i > 0) {
+        expect(beat.frame).toBeGreaterThan(shot.beats[i - 1].frame);
+        expect(beat.time).toBeGreaterThan(shot.beats[i - 1].time);
+      }
+      expect(narrationFrameAt(beat.frame / FPS).elapsed).toBeCloseTo(beat.time, 6);
+    }
+  }
 });

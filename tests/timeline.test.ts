@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test';
 import { chapters, duration, FPS, frameAt, scenes, timecode } from '../works/hadoop/src/timeline';
-import { PlaybackClock } from '../works/hadoop/src/clock';
 
 const storyboard = new URL('../Hadoop生态圈_Vibe视频_完整分镜表.md', import.meta.url);
 const toSeconds = (timestamp: string) => {
@@ -64,36 +63,5 @@ describe('full 00–09 timeline', () => {
       }
       expect(Math.round((scene.end - scene.start - previous) * FPS)).toBeGreaterThanOrEqual(54);
     }
-  });
-});
-
-describe('playback clock', () => {
-  test('does not drift with sparse samples and preserves a paused position', () => {
-    const clock = new PlaybackClock();
-    expect(clock.playing).toBe(false);
-    clock.play(1000);
-    expect(clock.current(7500)).toBe(6.5);
-    clock.pause(7500);
-    expect(clock.current(12000)).toBe(6.5);
-    clock.play(21000);
-    expect(clock.current(22000)).toBe(7.5);
-  });
-
-  test('seeks while playing, stops at duration, and restarts from zero', () => {
-    const clock = new PlaybackClock();
-    clock.play(100);
-    clock.seek(48, 200);
-    expect(clock.current(1200)).toBe(49);
-    clock.seek(duration, 2000);
-    expect(clock.playing).toBe(false);
-    expect(clock.current(3000)).toBe(duration);
-    clock.play(3000);
-    expect(clock.current(3000)).toBe(0);
-    const afterEnd = 3000 + duration * 1000 + 500;
-    expect(clock.current(afterEnd)).toBe(duration);
-    clock.pause(afterEnd);
-    expect(clock.playing).toBe(false);
-    clock.seek(-8, afterEnd + 2000);
-    expect(clock.current(afterEnd + 2000)).toBe(0);
   });
 });
