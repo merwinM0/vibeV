@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ebf5f7">
+  <title>从 MC 交易日志到 HDFS｜vibeV</title>
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="../../covers/editor.css">
+  <script type="module" src="./main.ts"></script>
+  <script type="module" src="../../covers/editor.ts"></script>
+</head>
+<body>
+  <header class="sitebar">
+    <div class="wrap sitebar-inner">
+      <a class="brand" href="../../" aria-label="vibeV，返回作品目录"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M10 8.5v7l5.5-3.5z" fill="currentColor"/></svg>vibeV</a>
+      <span class="edition mono">HADOOP / 01</span>
+    </div>
+  </header>
+  <main class="wrap">
+    <header class="intro">
+      <p class="eyebrow mono"><span></span> 网页样片 <b>/</b> 无声图解</p>
+      <h1>从 MC 交易日志到 HDFS</h1>
+      <p class="lead">跟着交易文件的第二个块，看客户端怎么写、怎么读，以及掉一台机器之后怎么办。</p>
+    </header>
+    <div class="workspace">
+      <section id="player" class="player" tabindex="0" aria-label="HDFS 样片播放器" aria-describedby="keys">
+        <div class="stage" aria-hidden="true">
+          <div class="stage-header">
+            <div class="film-kicker"><span class="film-number mono" id="film-number">01</span><span id="film-chapter">写入管线</span></div>
+            <span class="film-version mono">HADOOP 3.3.6 / 复制模式</span>
+          </div>
+          <h2 class="film-title" id="film-title">写文件，先找谁？</h2>
+          <p class="film-deck" id="film-deck">一天的交易明细 · 大文件演算（只追踪第二块）</p>
+          <svg id="diagram" class="diagram" viewBox="0 0 1280 566" xmlns="http://www.w3.org/2000/svg"></svg>
+          <aside class="host">
+            <p class="host-eyebrow mono">CASE 01 <span> / </span> MC 交易站</p>
+            <div class="host-file">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M5 2.5h9.5L20 8v13.5H5zM14 3v6h5M8.5 13h8M8.5 17h6" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+              <div><b>交易明细</b><small class="mono">part-large.parquet</small></div>
+            </div>
+            <div class="block-strip mono"><span>B1</span><strong>B2</strong><span>B3</span></div>
+            <canvas id="host-canvas" width="420" height="380"></canvas>
+            <svg class="case-items" viewBox="0 0 80 40" shape-rendering="crispEdges">
+              <path d="M2 16 17 8l15 8v17l-15 7L2 33Z" fill="#73543c"/><path d="M2 16 17 8l15 8-15 7Z" fill="#d8ad70"/><path d="m9 16 8-4 8 4-8 4Z" fill="#986539"/><path d="M17 23l15-7v17l-15 7Z" fill="#59422e"/><path d="M6 21h3v11H6zm5 3h3v11h-3zm9 .5 3-1.5v10l-3 1.5zm7-3.5 2-1v10l-2 1Z" fill="#aa8052"/>
+              <path d="M56 6h12v4h5v6h4v12h-4v6h-5v4H56v-4h-5v-6h-4V16h4v-6h5Z" fill="#25795b"/><path d="M56 12h12v4h4v12h-4v4H56v-4h-4V16h4Z" fill="#5ab78a"/><path d="M57 15h10v3h-7v7h-3Z" fill="#b4e3a5"/>
+            </svg>
+            <div class="host-footer"><span>B2 可用副本</span><strong id="copy-count" class="mono">0 / 3</strong></div>
+          </aside>
+          <p class="film-caption" id="film-caption"></p>
+        </div>
+        <div class="transport">
+          <input id="seek" aria-label="播放进度" type="range" min="0" max="3180" value="0" disabled>
+          <div class="transport-row">
+            <button id="play" class="play" type="button" disabled><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 3.5v13l11-6.5z" fill="currentColor"/></svg><span id="play-label">播放</span></button>
+            <span id="clock" class="mono clock">00:00 / 01:46</span>
+            <div class="transport-right">
+              <button id="prev" class="icon-button" type="button" aria-label="上一镜" title="上一镜" disabled>←</button>
+              <button id="next" class="icon-button" type="button" aria-label="下一镜" title="下一镜" disabled>→</button>
+              <button id="expand" class="icon-button" type="button" aria-label="全屏" title="全屏" disabled><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 3H3v4m10-4h4v4m0 6v4h-4m-6 0H3v-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </section>
+      <aside class="notebook" aria-label="样片导览">
+        <nav class="chapters" aria-label="样片章节">
+          <h2>章节</h2><span class="chapter-count mono">03 段</span>
+          <ol id="chapter-list"></ol>
+        </nav>
+        <section class="case-note" aria-labelledby="case-heading">
+          <p class="mono case-kicker">FILE / 01 <span>·</span> 案例参数</p>
+          <h2 id="case-heading">接着交易明细往下看</h2>
+          <p>300 MiB 的假设文件，按 128 MiB 切成三块。本片只追踪 <strong>B2</strong>，目标是保留三份副本。</p>
+          <dl><div><dt>B1</dt><dd>128 MiB</dd></div><div class="selected"><dt>B2</dt><dd>128 MiB</dd></div><div><dt>B3</dt><dd>44 MiB</dd></div></dl>
+        </section>
+      </aside>
+      <div class="reading">
+        <div class="reading-header"><span id="scene-number" class="mono">镜头 01 / 12</span><span id="reading-count" class="mono">B2 可用副本 0 / 3</span></div>
+        <p id="reading-text">客户端先向 NameNode 申请创建文件；文件字节不走这条线。</p>
+      </div>
+    </div>
+    <p id="keys" class="help">播放器获得焦点时，空格播放或暂停，左右方向键跳转 5 秒。也可用箭头按钮逐镜查看。</p>
+    <p id="status" role="status"></p>
+    <noscript><p>开启 JavaScript 后即可播放网页样片。</p></noscript>
+    <form class="cover-editor" data-cover-editor="hadoop-data-hdfs" aria-labelledby="cover-heading" hidden>
+      <h2 id="cover-heading">作品封面</h2><p id="cover-help">首页按 16:9 居中裁切。支持 PNG、JPEG、WebP，最大 5 MB。</p>
+      <div class="cover-actions"><input type="file" aria-label="选择封面图片" aria-describedby="cover-help" accept="image/png,image/jpeg,image/webp" required><button type="submit">上传封面</button><button type="button" hidden>移除封面</button></div>
+      <p role="status"></p>
+    </form>
+    <img id="host-skin" src="../../avatar/mc_mon.png" alt="" width="64" height="64" hidden>
+  </main>
+</body>
+</html>

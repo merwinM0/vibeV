@@ -4,7 +4,7 @@
 
 Watch chapter-based animated explainers in your browser. The homepage lists the available works, each with its own player page.
 
-Current work: **Hadoop Ecosystem**. Follow a batch of e-commerce orders through storage and parallel processing to a sales report and an order lookup. The film runs **about 3:11 across 10 chapters**. The original takes play continuously in `p1` → `p4` order, with captions and visuals timed to the narration. It plays in 16:9 landscape, with no video export.
+Original work: **Hadoop Ecosystem**. Follow a batch of e-commerce orders through storage and parallel processing to a sales report and an order lookup. The film runs **about 3:11 across 10 chapters**. The original takes play continuously in `p1` → `p4` order, with captions and visuals timed to the narration. It plays in 16:9 landscape, with no video export.
 
 ## Quick start
 
@@ -16,6 +16,10 @@ bun run dev
 ```
 
 Open the address printed in the terminal (default: `http://127.0.0.1:3000/`) and select Hadoop Ecosystem on the homepage to open `/works/hadoop/`. Select Play to hear the narration, or use the mute, seek, and full-screen controls. The current chapter stays centered; scroll, swipe, or click the chapter strip to switch chapters. While the player has focus, Space toggles playback and the arrow keys skip back/forward 5 seconds. The timeline uses native keyboard controls when focused. On narrow screens, the current caption is also shown below the player.
+
+### New Hadoop sample
+
+Open “从 MC 交易日志到 HDFS · 样片” (`/works/hadoop-data-hdfs/`) from the homepage. This **1:46 silent explainer** follows block B2 through writing, reading, failover to another replica, and re-replication. Jump by chapter or shot, scrub, or use fullscreen. Subtle head scaling uses simulated speech beats rather than a recording. See the [sample storyboard (Chinese)](works/hadoop-data-hdfs/分镜.md).
 
 ### Minecraft character sample
 

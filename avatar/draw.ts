@@ -1,9 +1,13 @@
 import { poseAt, rotate } from './motion';
-import type { Action, Vec3 } from './motion';
+import type { Action, Pose, Vec3 } from './motion';
 import { dimensions, parts, skinUV } from './skin';
 import type { Part, Rect, Skin } from './skin';
 
-export type AvatarView = { x: number; y: number; scale: number; yaw?: number; tilt?: number; action?: Action; time?: number; intensity?: number; highlight?: Part };
+export type AvatarView = {
+  x: number; y: number; scale: number; yaw?: number; tilt?: number;
+  action?: Action; time?: number; intensity?: number; highlight?: Part;
+  pose?: Pose; headScale?: number;
+};
 type Face = keyof ReturnType<typeof skinUV>;
 type Surface = { a: Vec3; b: Vec3; c: Vec3; uv: Rect; depth: number };
 
@@ -21,7 +25,8 @@ function faces(x: number, top: number, bottom: number, z: number): Record<Face, 
 // Geometry is in texture-pixel units, with each cuboid offset relative to its pivot.
 export function drawAvatar(ctx: CanvasRenderingContext2D, skin: Skin, view: AvatarView) {
   const { x, y, scale, highlight, yaw = .35, tilt = .16, action = 'idle', time = 0, intensity = 1 } = view;
-  const pose = poseAt(action, time, intensity);
+  const pose = view.pose ?? poseAt(action, time, intensity);
+  const headScale = view.headScale ?? 1;
   const camera = (p: Vec3) => rotate(rotate(p, [0, yaw, 0]), [tilt, 0, 0]);
   const [armWidth] = dimensions('leftArm', skin.model);
   const pivots: Record<Part, Vec3> = {
@@ -36,7 +41,11 @@ export function drawAvatar(ctx: CanvasRenderingContext2D, skin: Skin, view: Avat
     const top = part === 'head' ? h : part.endsWith('Arm') ? 1 : 0;
     const angle = pose.angles[part];
     const transform = (p: Vec3) => {
-      const [a, b, c] = rotate(p, angle);
+      // Scale both skin layers around the head center, before rotation at the neck.
+      const mid = top - h / 2;
+      const local: Vec3 = part === 'head' && headScale !== 1
+        ? [p[0] * headScale, mid + (p[1] - mid) * headScale, p[2] * headScale] : p;
+      const [a, b, c] = rotate(local, angle);
       return camera([a + px, b + py + pose.lift, c + pz]);
     };
     for (const outer of [false, true]) {
