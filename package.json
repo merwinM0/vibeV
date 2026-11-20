@@ -8,6 +8,7 @@
     "build": "bun ./scripts/build.ts",
     "preview": "bun ./scripts/preview.ts",
     "avatar:render": "bun ./scripts/render-avatar.ts",
+    "hadoop:dub": "bun ./scripts/edit-hadoop-dub.ts",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.tools.json"
   },
   "devDependencies": {

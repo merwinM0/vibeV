@@ -1,35 +1,46 @@
 import { expect, test } from 'bun:test';
-import { narrationChapters, narrationDuration, narrationFrameAt, narrationShots } from '../works/hadoop/src/narration';
-import { chapters, FPS } from '../works/hadoop/src/timeline';
+import { narrationClips, narrationFrameAt } from '../works/hadoop/src/narration';
+import { duration, FPS, frameAt, scenes } from '../works/hadoop/src/timeline';
 
-test('all narrated lines switch at their authored frame and preserve visual beat anchors', () => {
-  let previous = '';
-  let frame = -1;
-  for (const shot of narrationShots) {
-    expect(shot.cues[0].frame).toBe(shot.start);
-    for (const cue of shot.cues) {
-      expect(cue.frame).toBeGreaterThan(frame);
-      expect(cue.frame).toBeLessThan(shot.end);
-      if (frame >= 0) expect(narrationFrameAt((cue.frame - 1) / FPS).caption).toBe(previous);
-      const rendered = narrationFrameAt(cue.frame / FPS);
-      expect(rendered.caption).toBe(cue.caption);
-      expect(rendered.scene.id).toBe(shot.scene.id);
-      if (cue.visualTime !== undefined) expect(rendered.elapsed).toBeCloseTo(cue.visualTime, 8);
-      previous = rendered.caption;
-      frame = cue.frame;
-    }
-    const afterShot = narrationFrameAt((shot.end - 1) / FPS);
-    expect(afterShot.elapsed).toBeCloseTo(shot.scene.end - shot.scene.start - 1 / FPS, 8);
+test('adding narration leaves every original animation frame and shot boundary unchanged', () => {
+  for (let i = 0; i <= duration * FPS; i++) {
+    const seconds = i / FPS;
+    const original = frameAt(seconds);
+    const narrated = narrationFrameAt(seconds);
+    expect(narrated.scene).toBe(original.scene);
+    expect(narrated.elapsed).toBe(original.elapsed);
+    expect(narrated.frame).toBe(original.frame);
   }
 });
 
-test('chapter and recording joins land on the right speech without replaying the disclosure', () => {
-  expect(narrationChapters.map(({ id }) => id)).toEqual(chapters.map(({ id }) => id));
-  for (const chapter of narrationChapters) expect(narrationFrameAt(chapter.start).scene.chapter).toBe(chapter.id);
-  expect(narrationFrameAt(44.97).caption).toContain('MapReduce 或 Spark');
-  expect(narrationFrameAt(89).caption).toBe('报表回答卖多少，');
-  expect(narrationFrameAt(130).caption).toContain('Oozie');
-  expect(narrationShots.flatMap(({ cues }) => cues).filter(({ caption }) => caption.includes('AI 生成'))).toHaveLength(1);
-  expect(narrationFrameAt(narrationDuration + 1)).toEqual(narrationFrameAt(narrationDuration));
-  expect(narrationFrameAt(narrationDuration).caption).toBe('此内容由 AI 生成。');
+test('each audio edit fits its shot and switches captions at the placement frame', () => {
+  let previousEnd = 0;
+  for (const clip of narrationClips) {
+    const start = clip.atFrame / FPS;
+    const length = clip.outPoint - clip.inPoint;
+    const end = start + length;
+    const narrated = narrationFrameAt(start);
+    expect(length).toBeGreaterThan(0);
+    expect(start).toBeGreaterThanOrEqual(previousEnd);
+    expect(end).toBeLessThanOrEqual(narrated.scene.end);
+    expect(narrated.scene.id).toBe(clip.id);
+    expect(narrated.caption).toBe(clip.caption);
+    expect(narrationFrameAt(start + length / 2).caption).toBe(clip.caption);
+    expect(narrationFrameAt((clip.atFrame - 1) / FPS).caption).not.toBe(clip.caption);
+    previousEnd = end;
+  }
+});
+
+test('missing speech keeps the original captions; re-ordered lines follow the storyboard', () => {
+  const voiced = new Set(narrationClips.map(({ id }) => id));
+  const unvoiced = scenes.filter(({ id }) => !voiced.has(id));
+  expect(unvoiced.map(({ id }) => id)).toEqual(['S01', 'S03', 'S04', 'S05', 'S07', 'S20', 'S30', 'S32', 'S38']);
+  for (const scene of unvoiced) {
+    for (const [at] of scene.cues) expect(narrationFrameAt(scene.start + at)).toEqual(frameAt(scene.start + at));
+  }
+  // The unrecorded direct DataNode write still has its original caption.
+  expect(narrationFrameAt(67)).toEqual(frameAt(67));
+  expect(narrationFrameAt(178.5).caption).toBe('局部求和可选。');
+  expect(narrationFrameAt(183.5).caption).toContain('Shuffle');
+  expect(narrationClips.filter(({ caption }) => caption.includes('AI 生成'))).toHaveLength(1);
 });

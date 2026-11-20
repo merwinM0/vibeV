@@ -1,6 +1,6 @@
 import { PlaybackClock } from './clock';
 import { chapterReel } from './chapter-reel';
-import { narrationChapters, narrationDuration, narrationFrameAt } from './narration';
+import { narrationFrameAt } from './narration';
 import { chapters, duration, frameAt, timecode } from './timeline';
 import { Film } from './visual/film';
 
@@ -41,20 +41,19 @@ function attach(ctx: CanvasRenderingContext2D) {
 
   const film = new Film(ctx);
   const clock = new PlaybackClock();
-  const runtime = fullVersion ? duration : narrationDuration;
-  const totalLabel = timecode(Math.round(runtime));
+  const totalLabel = timecode(duration);
   const timelineFrameAt = fullVersion ? frameAt : narrationFrameAt;
   let raf = 0;
   let lastFrame = -1;
   let lastCaption = '';
   let reachedEnd = false;
-  const reel = chapterReel(chapterList, fullVersion ? chapters : narrationChapters, jump);
+  const reel = chapterReel(chapterList, chapters, jump);
 
-  // The recording is the only running clock in the dubbed edition. Buffering,
-  // throttled frames and seeking cannot make the captions run ahead of speech.
+  // The edited track has the original storyboard's length and time coordinates.
+  // Read the media clock so buffering/seeking cannot pull sound and picture apart.
   function current(now: number) {
     if (fullVersion) return clock.current(now);
-    return audio.ended || reachedEnd ? runtime : Math.min(runtime, audio.currentTime);
+    return audio.ended || reachedEnd ? duration : Math.min(duration, audio.currentTime);
   }
 
   function playing() {
@@ -73,14 +72,14 @@ function attach(ctx: CanvasRenderingContext2D) {
     }
     if (player.dataset.scene !== scene.id) player.dataset.scene = scene.id;
     reel.show(scene.chapter);
-    const position = seconds === runtime ? totalLabel : timecode(seconds);
+    const position = timecode(seconds);
     if (timeLabel.textContent !== position) {
       timeLabel.textContent = position;
       seek.setAttribute('aria-valuetext', `${position} / ${totalLabel}`);
     }
     seek.value = String(seconds);
-    seekTrack.style.setProperty('--ratio', String(seconds / runtime));
-    const mode = playing() ? 'pause' : seconds === runtime ? 'replay' : 'play';
+    seekTrack.style.setProperty('--ratio', String(seconds / duration));
+    const mode = playing() ? 'pause' : seconds === duration ? 'replay' : 'play';
     if (play.dataset.mode !== mode) {
       play.dataset.mode = mode;
       playLabel.textContent = mode === 'pause' ? '暂停' : mode === 'replay' ? '重播' : '播放';
@@ -90,7 +89,7 @@ function attach(ctx: CanvasRenderingContext2D) {
   function tick(now: number) {
     raf = 0;
     const seconds = current(now);
-    if (fullVersion && seconds === runtime) clock.pause(now);
+    if (fullVersion && seconds === duration) clock.pause(now);
     paint(seconds);
     if (playing()) raf = requestAnimationFrame(tick);
   }
@@ -104,8 +103,8 @@ function attach(ctx: CanvasRenderingContext2D) {
     const now = performance.now();
     if (fullVersion) clock.seek(seconds, now);
     else {
-      const target = Math.max(0, Math.min(runtime, seconds));
-      reachedEnd = target === runtime;
+      const target = Math.max(0, Math.min(duration, seconds));
+      reachedEnd = target === duration;
       if (reachedEnd) audio.pause();
       audio.currentTime = reachedEnd && Number.isFinite(audio.duration) ? audio.duration : target;
     }
@@ -113,7 +112,7 @@ function attach(ctx: CanvasRenderingContext2D) {
   }
 
   function audioFailed() {
-    audioStatus.textContent = '配音无法播放，请刷新重试，或切换到完整版图解。';
+    audioStatus.textContent = '配音无法播放，请刷新重试，或切换到无声版。';
     audioStatus.hidden = false;
     render();
   }
@@ -125,7 +124,7 @@ function attach(ctx: CanvasRenderingContext2D) {
       else clock.play(now);
     } else if (playing()) audio.pause();
     else {
-      if (current(now) === runtime) jump(0);
+      if (current(now) === duration) jump(0);
       audioStatus.hidden = true;
       void audio.play().catch((error: unknown) => {
         if (!(error instanceof DOMException) || error.name !== 'AbortError') audioFailed();
@@ -175,7 +174,7 @@ function attach(ctx: CanvasRenderingContext2D) {
   void document.fonts.ready.then(refreshFrame);
   seek.disabled = play.disabled = false;
   fullscreen.disabled = !document.fullscreenEnabled;
-  seek.max = String(runtime);
+  seek.max = String(duration);
   seek.setAttribute('aria-valuetext', `00:00 / ${totalLabel}`);
   durationLabel.textContent = totalLabel;
   render();
