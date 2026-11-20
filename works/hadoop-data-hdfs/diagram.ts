@@ -1,4 +1,4 @@
-import { clamp, writeLaunch } from './timeline';
+import { clamp, smooth, storyCues } from './timeline';
 import type { NodeState, Route, SampleFrame } from './timeline';
 import { intake } from './stage';
 
@@ -32,6 +32,7 @@ export function makeDiagram(svg: SVGSVGElement) {
       <marker id="arrow-control" markerWidth="9" markerHeight="10" refX="7" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M1 1l6 4-6 4" fill="none" stroke="var(--film-control)" stroke-width="2"/></marker>
       <marker id="arrow-data" markerWidth="13" markerHeight="14" refX="10" refY="7" orient="auto" markerUnits="userSpaceOnUse"><path d="M2 2l8 5-8 5" fill="none" stroke="var(--film-data)" stroke-width="2.8"/></marker>
       <marker id="arrow-ack" markerWidth="13" markerHeight="14" refX="10" refY="7" orient="auto" markerUnits="userSpaceOnUse"><path d="M2 2l8 5-8 5" fill="none" stroke="var(--film-control)" stroke-width="2.5"/></marker>
+      ${[0, 1, 2].map(i => `<mask id="ink-${i}" maskUnits="userSpaceOnUse" x="0" y="0" width="1280" height="566"><path fill="none" stroke="white" stroke-width="30" stroke-linecap="round" stroke-linejoin="round" pathLength="1"/></mask>`).join('')}
     </defs>
     <rect class="layer" x="1" y="1" width="1278" height="263" rx="26"/>
     <rect class="layer data-layer" x="1" y="282" width="1278" height="283" rx="26"/>
@@ -39,7 +40,7 @@ export function makeDiagram(svg: SVGSVGElement) {
     <path class="legend-line control" d="M1030 38h42"/><text class="diagram-legend" x="1090" y="46">虚线 · 请求／确认</text>
     <text class="diagram-eyebrow" x="28" y="330">02 / 数据传输</text>
     <path class="legend-line data" d="M1030 322h42"/><text class="diagram-legend" x="1090" y="330">实线 · 文件字节</text>
-    <g id="routes" fill="none"><path class="route"/><path class="route"/><path class="route"/></g>
+    <g id="routes" fill="none">${[0, 1, 2].map(i => `<path class="route" mask="url(#ink-${i})"/>`).join('')}</g>
     <g id="intake" visibility="hidden"><rect class="intake" x="${intake.x - 24}" y="${intake.y - 24}" width="48" height="48" rx="9"/></g>
     <g id="motion-paths"><path fill="none" stroke="none"/><path fill="none" stroke="none"/><path fill="none" stroke="none"/></g>
     <g transform="translate(455 81)">
@@ -69,14 +70,16 @@ export function makeDiagram(svg: SVGSVGElement) {
   const sparks = [...token.querySelectorAll('circle')];
   const socket = svg.querySelector('#intake')!;
   const routeGroup = svg.querySelector('#routes')!;
-  const statusCards = [...svg.querySelectorAll<SVGGElement>('.node')].slice(1);
+  const cards = [...svg.querySelectorAll<SVGGElement>('.node')];
+  const ink = [...svg.querySelectorAll<SVGPathElement>('mask path')];
+  const statusCards = cards.slice(1);
   const meta = svg.querySelector('#meta-label')!;
   const tag = svg.querySelector('#route-tag')!;
   let routeKey = '';
   let lengths: number[] = [];
   let lastStates = '';
 
-  return (state: SampleFrame, reduced: boolean) => {
+  return (state: SampleFrame, reduced: boolean, board: number) => {
     const { route } = state;
     const key = `${state.index}/${route}`;
     if (routeKey !== key) {
@@ -86,6 +89,7 @@ export function makeDiagram(svg: SVGSVGElement) {
       const marker = route === 'ack' ? 'ack' : control ? 'control' : 'data';
       for (const [i, path] of lines.entries()) {
         path.setAttribute('d', segments[i] ?? '');
+        ink[i].setAttribute('d', segments[i] ?? '');
         path.setAttribute('class', `route ${control ? 'control' : 'data'}${route === 'heartbeat' ? ' interrupted' : ''}`);
         path.setAttribute('marker-end', segments[i] && route !== 'heartbeat' ? `url(#arrow-${marker})` : 'none');
       }
@@ -103,9 +107,21 @@ export function makeDiagram(svg: SVGSVGElement) {
     const progress = state.progress;
     const show = lengths.length > 0 && progress > 0 && progress < 1 && !reduced && route !== 'heartbeat';
     token.setAttribute('visibility', show ? 'visible' : 'hidden');
-    const opacity = route === 'write' && state.local < writeLaunch ? .27 + .45 * state.routeReveal
-      : route === 'heartbeat' || reduced && route !== 'none' ? 1 : state.routeReveal;
-    routeGroup.setAttribute('opacity', opacity.toFixed(3));
+    // Rack targets follow the reply; the spare machine is introduced with the repair order.
+    cards.forEach((card, i) => {
+      const start = [storyCues.open, 8.3, 8.57, 8.84, 85][i];
+      const enter = reduced ? Number(state.seconds >= start) : smooth((state.seconds - start) / .55);
+      const q = enter * smooth((board - i * .075) / (1 - i * .075));
+      card.style.opacity = String(q);
+      card.setAttribute('transform', `translate(${nodes[i].x} ${391 + (reduced ? 0 : (1 - q) * 32)})`);
+    });
+    const exit = reduced ? 1 : smooth((state.length - state.local) / .55);
+    routeGroup.setAttribute('opacity', String(exit));
+    ink.forEach((path, i) => {
+      const reveal = route === 'write' || route === 'ack' ? clamp(progress * 3 - i) : state.routeReveal;
+      path.setAttribute('stroke-dasharray', `${reduced ? 1 : reveal} 2`);
+      lines[i].style.opacity = !reduced && reveal === 0 ? '0' : '1';
+    });
     if (show) sparks.forEach((spark, i) => {
       const q = (progress - .014 * i) * lengths.length;
       spark.setAttribute('visibility', q < 0 ? 'hidden' : 'inherit');

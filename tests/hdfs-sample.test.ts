@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import { actingPose, speechScale } from '../avatar/performance';
 import { hostPose, propAt } from '../works/hadoop-data-hdfs/acting';
-import { arrivalRings, lensAt, worldPoint } from '../works/hadoop-data-hdfs/stage';
+import { sheetsAt } from '../works/hadoop-data-hdfs/cutaways';
+import { arrivalRings, diagramLeft, lensAt, worldPoint } from '../works/hadoop-data-hdfs/stage';
 import { beats, chapters, fps, frameAt, frameCount, timecode } from '../works/hadoop-data-hdfs/timeline';
 
 const at = (seconds: number) => frameAt(seconds * fps);
@@ -56,15 +57,34 @@ describe('HDFS sample', () => {
     expect(propAt(at(17), false).release).toBeLessThan(1);
     expect(propAt(at(18), false).mode).toBe('none');
     expect(propAt(at(16), true)).toEqual({ mode: 'intake', release: 1 });
-    expect(hostPose(at(16), false).x).toBeLessThan(500);
-    expect(hostPose(at(29), false).x).toBeGreaterThan(900);
-    expect(hostPose(at(38), false).x).toBe(hostPose(at(76.5), false).x);
+    // No trip across the signal paths. Leave the projection to the ACK and repair.
+    for (let f = 4.5 * fps; f <= frameCount; f++) {
+      const view = hostPose(frameAt(f), false);
+      expect(view.x + 12 * view.scale).toBeLessThan(diagramLeft);
+    }
+    for (const t of [29, 94]) {
+      const view = hostPose(at(t), false);
+      expect(view.x + 12 * view.scale).toBeLessThan(0);
+    }
     expect(lensAt(at(95), false)).toMatchObject(worldPoint(1133, 406));
     expect(lensAt(at(95), false).zoom).toBeGreaterThan(1);
     expect(lensAt(at(95), true).zoom).toBe(1);
     expect(arrivalRings(at(93))).toHaveLength(0);
     expect(arrivalRings(at(96.2))).toHaveLength(1);
     expect(arrivalRings(at(97.3))).toHaveLength(0);
+  });
+
+  test('board clears for each insert, reopens for the query/retry and never ends on a blank', () => {
+    for (const [t, id] of [[38, 'lookup'], [67, 'pulse'], [100, 'inventory']] as const) {
+      const outgoing = sheetsAt(at(t - .4), false);
+      expect(outgoing.board).toBeGreaterThan(0);
+      expect(outgoing.board).toBeLessThan(1);
+      expect(sheetsAt(at(t), false).detail).toBeGreaterThan(.3);
+      for (const reduced of [false, true]) expect(sheetsAt(at(t + 1), reduced)).toEqual({ board: 0, id, detail: 1 });
+      expect(sheetsAt(at(t), true)).toEqual({ board: 0, id, detail: 1 });
+    }
+    for (const t of [18, 42, 76.5, 96]) expect(sheetsAt(at(t), false).board).toBe(1);
+    expect(sheetsAt(at(106), false).detail).toBe(1);
   });
 
   test('host speech scaling is subtle and returns to rest; reduced motion removes scaling', () => {
@@ -76,7 +96,7 @@ describe('HDFS sample', () => {
     const samples = Array.from({ length: 60 }, (_, i) => speechScale(i / 30, window));
     expect(samples.filter((v, i) => v > 1.008 && v > samples[i - 1] && v > samples[i + 1]).length).toBeGreaterThanOrEqual(6);
     expect(actingPose('seatedThink').bends?.rightArm).toBeLessThan(-1.8);
-    expect(hostPose(at(103), false).pose.root?.[2]).toBeGreaterThan(1);
+    expect(propAt(at(103), false).mode).toBe('receipt');
     for (const beat of beats.slice(1)) {
       const left = hostPose(frameAt(beat.start * fps - 1), false);
       const right = hostPose(at(beat.start), false);

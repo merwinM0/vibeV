@@ -1,6 +1,7 @@
 import { drawAvatar, handAnchor } from '../../avatar/draw';
 import { prepareSkin } from '../../avatar/skin';
 import { hostPose, propAt } from './acting';
+import { drawProp } from './props';
 import { smooth, storyCues } from './timeline';
 import { arrivalRings, intake, worldPoint } from './stage';
 import type { SampleFrame } from './timeline';
@@ -59,34 +60,26 @@ function drawReceipt(ctx: CanvasRenderingContext2D, x: number, y: number, w: num
   ctx.restore();
 }
 
-function drawStation(ctx: CanvasRenderingContext2D, state: SampleFrame, hand: { x: number; y: number }, reduced: boolean) {
-  const { seconds } = state;
-  const after = seconds >= 31.4;
-  const first = seconds >= 3.9 && seconds < 5.8;
-  const cue = first ? storyCues.open : seconds < 57 ? storyCues.lookup : storyCues.retry;
-  const setup = first ? [434, 671, '打开操作台'] as const : [1631, 789, seconds < 67 ? '查位置' : '改读乙'] as const;
-  const [x, y, label] = setup;
-  if (after) {
-    const alpha = smooth((seconds - 31.4) / 2.5);
-    ctx.save(); ctx.globalAlpha = alpha;
-    ctx.fillStyle = '#283348'; ctx.strokeStyle = '#5f6e89'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.roundRect(1668, 812, 185, 44, 13); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#333c56'; ctx.fillRect(1688, 856, 12, 30); ctx.fillRect(1823, 856, 12, 30);
-    ctx.restore();
+function drawStation(ctx: CanvasRenderingContext2D, t: number, reduced: boolean) {
+  const onSet = (from: number, to: number) => reduced ? Number(t >= from && t < to)
+    : smooth((t - from) / .65) * smooth((to - t) / .65);
+  ctx.save();
+  const seated = onSet(35, 70);
+  if (seated) {
+    ctx.globalAlpha = seated;
+    drawProp(ctx, 'crate', 138, 780, 5.8);
   }
-  if (!first && (seconds < 38.6 || seconds >= 82) || after && seconds >= 46 && seconds < 67) return;
-  const press = seconds >= cue && seconds < cue + 1.05;
-  const appear = reduced ? 1 : first ? smooth((seconds - 3.9) / .24) * smooth((5.8 - seconds) / .48) : smooth((seconds - 38.6) / .54);
-  ctx.save(); ctx.globalAlpha = appear;
-  ctx.strokeStyle = press ? cyan : '#6b8399'; ctx.fillStyle = press ? '#1c4354' : '#1b293d'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.roundRect(x - 66, y - 23, 132, 46, 11); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = '#dfedf5'; ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, x, y + 1);
-  if (press && !reduced) {
-    const q = (seconds - cue) / 1.05;
-    ctx.globalAlpha = (1 - q) * .8;
-    ctx.strokeStyle = cyan;
-    ctx.beginPath(); ctx.ellipse(x, y, 66 + q * 26, 24 + q * 14, 0, 0, 2 * Math.PI); ctx.stroke();
-    ctx.setLineDash([4, 5]); ctx.beginPath(); ctx.moveTo(hand.x, hand.y); ctx.lineTo(x, y); ctx.stroke();
+  const lookup = t >= 35 && t < 48;
+  const cue = lookup ? storyCues.lookup : t < 35 ? storyCues.open : storyCues.retry;
+  const visible = onSet(3.45, 8) + onSet(37.2, 47.6) + onSet(74, 80);
+  if (visible) {
+    ctx.globalAlpha = visible;
+    const x = lookup ? 257 : 280, y = lookup ? 694 : 659;
+    drawProp(ctx, 'console', x, y, 7);
+    if (t >= cue && t < cue + 1.2) {
+      ctx.fillStyle = cyan;
+      ctx.fillRect(x + 7, y + 7, 35, 14);
+    }
   }
   ctx.restore();
 }
@@ -100,18 +93,19 @@ export async function makeHost(canvas: HTMLCanvasElement, image: HTMLImageElemen
     const { x, y, scale } = view;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (!reduced) drawArrivals(ctx, state);
-    drawStation(ctx, state, handAnchor(skin, view, 'rightArm'), reduced);
     if (state.seconds >= 3.5) {
       ctx.fillStyle = '#1e2637';
       ctx.beginPath();
       ctx.ellipse(x + 4, y + 3, scale * 10.2, scale * .92, 0, 0, 2 * Math.PI);
       ctx.fill();
     }
+    drawStation(ctx, state.seconds, reduced);
     drawAvatar(ctx, skin, view);
     const prop = propAt(state, reduced);
     if (prop.mode === 'receipt') {
       const grip = handAnchor(skin, view, 'rightArm');
-      drawReceipt(ctx, grip.x, grip.y - 17, 48 * (1 - smooth((state.seconds - 2.12) / .48)));
+      const size = state.seconds < 3 ? 48 * (reduced ? 1 : 1 - smooth((state.seconds - 2.12) / .48)) : 32;
+      drawReceipt(ctx, grip.x, grip.y - 17, size);
     } else if (prop.mode !== 'none') {
       const grip = handAnchor(skin, view, 'rightArm');
       const q = prop.release;

@@ -25,7 +25,10 @@ async function start() {
   }
   const slugs = workSlugs(entries);
   const media = Object.fromEntries(mediaFiles.map((path) => [`/${path}`, {
-    GET: () => new Response(Bun.file(join(root, path))),
+    GET: async () => {
+      const track = Bun.file(join(root, path));
+      return await track.exists() ? new Response(track) : new Response('Local narration not found', { status: 404 });
+    },
   }]));
   const server = Bun.serve({
     hostname: '127.0.0.1',

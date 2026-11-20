@@ -1,6 +1,7 @@
 import { makeDiagram } from './diagram';
 import { makeHost } from './host';
-import { lensAt, stageHeight, stageWidth } from './stage';
+import { diagramLeft, diagramScale, diagramTop, diagramWidth, lensAt, stageHeight, stageWidth } from './stage';
+import { makeCutaways, sheetsAt } from './cutaways';
 import { beats, chapters, fps, frameAt, frameCount, smooth, storyCues, timecode } from './timeline';
 
 function byId(id: string) { return document.getElementById(id)!; }
@@ -36,6 +37,10 @@ const readingCount = byId('reading-count');
 const status = byId('status');
 const svg = stage.querySelector<SVGSVGElement>('#diagram')!;
 const diagram = makeDiagram(svg);
+const cutaway = makeCutaways(stage.querySelector<SVGSVGElement>('#cutaway')!);
+world.style.setProperty('--sheet-x', `${diagramLeft / stageWidth * 100}%`);
+world.style.setProperty('--sheet-y', `${diagramTop / stageHeight * 100}%`);
+world.style.setProperty('--sheet-width', `${diagramWidth * diagramScale / stageWidth * 100}%`);
 let renderHost: Awaited<ReturnType<typeof makeHost>> | undefined;
 const motion = matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -86,19 +91,23 @@ function paint(force = false) {
   }
   const reduced = motion.matches;
   if (filmCaption.textContent !== state.caption) filmCaption.textContent = reading.textContent = state.caption;
-  const board = reduced ? Number(state.seconds >= storyCues.open) : state.diagramReveal;
-  svg.style.opacity = String(board);
-  fileBadge.style.opacity = String(board);
-  const slip = reduced ? 1 - board : 1 - smooth((state.seconds - 3.45) / 1.3);
+  const sheet = sheetsAt(state, reduced);
+  cutaway(state, reduced, sheet);
+  svg.style.opacity = String(sheet.board);
+  svg.style.transform = reduced ? 'none' : `translateX(${(1 - sheet.board) * 5}%)`;
+  fileBadge.style.opacity = String(reduced ? Number(state.seconds >= storyCues.open) : state.diagramReveal);
+  const slip = reduced ? Number(state.seconds < storyCues.open) : 1 - smooth((state.seconds - 3.45) / 1.3);
   receipt.style.opacity = String(slip);
   receipt.style.transform = reduced ? 'none' : `translateY(${(1 - slip) * -12}px)`;
   filmHeading.style.opacity = String(reduced ? 1 : .48 + .52 * state.sceneReveal);
   filmHeading.style.transform = reduced ? 'none' : `translateY(${(1 - state.sceneReveal) * 5}px)`;
   const lens = lensAt(state, reduced);
-  world.style.setProperty('--focus-point', `${lens.x / stageWidth * 100}% ${lens.y / stageHeight * 100}%`);
+  // Track the node horizontally; protect the fixed heading above the control lane.
+  const pivotY = Math.min(lens.y, diagramTop + 90);
+  world.style.setProperty('--focus-point', `${lens.x / stageWidth * 100}% ${pivotY / stageHeight * 100}%`);
   world.style.setProperty('--zoom', lens.zoom.toFixed(4));
   world.style.setProperty('--shift-x', `${(lens.shiftX / stageWidth * 100).toFixed(3)}%`);
-  diagram(state, reduced);
+  diagram(state, reduced, sheet.board);
   renderHost?.(state, reduced);
   const count = `${state.copies} / 3`;
   if (copyCount.textContent !== count) {

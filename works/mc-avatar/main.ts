@@ -60,7 +60,7 @@ function filmPlayer(skin: Skin) {
     tick();
   }
   function audioFailed() {
-    status.textContent = '配音无法播放，请刷新页面后重试。';
+    status.textContent = '配音无法播放。请确认已提供 works/mc-avatar/dub/narration.mp3 后重新加载。';
     render();
   }
   function toggle() {

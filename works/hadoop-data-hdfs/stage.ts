@@ -4,9 +4,12 @@ import type { SampleFrame } from './timeline';
 export const stageWidth = 1920;
 export const stageHeight = 1080;
 export const diagramWidth = 1280;
-export const diagramScale = 1500 / diagramWidth;
-export const intake = { x: 216, y: 330 };
-export const worldPoint = (x: number, y: number) => ({ x: 90 + x * diagramScale, y: 300 + y * diagramScale });
+// Keep the performer's workbench outside the projection, including during camera pushes.
+export const diagramLeft = 410;
+export const diagramTop = 285;
+export const diagramScale = 1410 / diagramWidth;
+export const intake = { x: -36, y: 414 };
+export const worldPoint = (x: number, y: number) => ({ x: diagramLeft + x * diagramScale, y: diagramTop + y * diagramScale });
 
 export function lensAt({ route, local, length }: SampleFrame, reduced: boolean) {
   const focus = route === 'repair' ? worldPoint(1133, 406) : route === 'readA' ? worldPoint(277, 426) : null;

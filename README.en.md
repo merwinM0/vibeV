@@ -17,9 +17,11 @@ bun run dev
 
 Open the address printed in the terminal (default: `http://127.0.0.1:3000/`) and select Hadoop Ecosystem on the homepage to open `/works/hadoop/`. Select Play to hear the narration, or use the mute, seek, and full-screen controls. The current chapter stays centered; scroll, swipe, or click the chapter strip to switch chapters. While the player has focus, Space toggles playback and the arrow keys skip back/forward 5 seconds. The timeline uses native keyboard controls when focused. On narrow screens, the current caption is also shown below the player.
 
+**Local narration:** Git ignores every `dub/` under `works/`, including the edited `narration.mp3`. A fresh checkout can play the silent HDFS sample. For the original Hadoop and character films, restore each work’s `dub/narration.mp3`, or supply the original takes and run `bun run hadoop:dub` (`p1.mp3`–`p4.mp3`) or `bun run avatar:dub` (`p1.mp3`). The build copies available edited tracks and warns when one is missing. Supply the tracks before building a narrated release.
+
 ### New Hadoop sample
 
-Open “从 MC 交易日志到 HDFS · 样片” (`/works/hadoop-data-hdfs/`) from the homepage. This **1:46 silent explainer** follows block B2 through writing, reading, failover to another replica, and re-replication. Jump by chapter or shot, scrub, or use fullscreen. The page keeps the original dark site theme. The host starts with an oak receipt, opens the console, places B2, then remains seated to locate and retry reads. Small head pulses use denser simulated speech beats. See the [sample storyboard](works/hadoop-data-hdfs/分镜.md) and [production guidelines](vibe-make/SKILL.md) (Chinese).
+Open “从 MC 交易日志到 HDFS · 样片” (`/works/hadoop-data-hdfs/`) from the homepage. This **1:46 silent explainer** follows block B2 through writing, reading, failover to another replica, and re-replication. Jump by chapter or shot, scrub, or use fullscreen. The page keeps the original dark site theme. The trader operates the console outside the diagram, places B2, and leaves the stage for the ACK and replica repair. Routes unfold in order, cutting to a file request slip, a heartbeat trace and a replica tally. The wooden crate seat and console are original pixel props drawn from CSV. See the [sample storyboard](works/hadoop-data-hdfs/分镜.md) and [production guidelines](vibe-make/SKILL.md) (Chinese).
 
 ### Minecraft character sample
 

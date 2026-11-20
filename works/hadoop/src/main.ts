@@ -90,7 +90,7 @@ function attach(ctx: CanvasRenderingContext2D) {
   }
 
   function audioFailed() {
-    audioStatus.textContent = '配音无法播放，请刷新页面后重试。';
+    audioStatus.textContent = '配音无法播放。请确认已提供 works/hadoop/dub/narration.mp3 后重新加载。';
     audioStatus.hidden = false;
     render();
   }
