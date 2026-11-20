@@ -1,5 +1,5 @@
 type Background = 'dark' | 'light' | 'unknown';
-type Presentation = { panel: boolean; unicode: boolean; narrow: boolean; color: boolean; background: Background; columns?: number };
+type Presentation = { panel: boolean; unicode: boolean; color: boolean; background: Background; columns?: number; ambiguousIsNarrow?: boolean };
 type Overview = { title: string; url: string; left: string[]; right: string[]; status: string[] };
 
 const glyphs = [...'╭╮╰╯─│○'];
@@ -12,12 +12,12 @@ const palette = {
 
 export function terminalPresentation(stream: { isTTY?: boolean; columns?: number }, env: Record<string, string | undefined>, platform: string): Presentation {
   const panel = !!stream.isTTY && env.TERM !== 'dumb';
+  // Locale indicates UTF-8 support, not how the terminal displays ambiguous-width glyphs.
   const locale = env.LC_ALL || env.LC_CTYPE || env.LANG || '';
-  const narrow = !/^(?:zh|ja|ko)(?:[_.@-]|$)/i.test(locale);
   const native = ['linux', 'darwin', 'freebsd'].includes(platform);
   const bg = env.COLORFGBG?.split(';').at(-1);
   return {
-    panel, narrow, columns: stream.columns,
+    panel, columns: stream.columns,
     unicode: panel && native && /utf-?8/i.test(locale),
     color: panel && native && !env.NO_COLOR && /^(truecolor|24bit)$/i.test(env.COLORTERM ?? ''),
     background: bg === '0' || bg === '8' ? 'dark' : bg === '7' || bg === '15' ? 'light' : 'unknown',
@@ -47,7 +47,7 @@ export function renderDevOverview(content: Overview, format: Presentation): stri
   const known = Number.isFinite(columns) && columns > 0;
   if (known && columns < 6) return plain;
   const budget = known ? Math.min(88, Math.floor(columns)) : 80;
-  const width = (text: string) => Bun.stringWidth(text, { ambiguousIsNarrow: format.narrow });
+  const width = (text: string) => Bun.stringWidth(text, { ambiguousIsNarrow: format.ambiguousIsNarrow ?? true });
   const twoColumns = left.length > 0 && right.length > 0 && budget >= 56;
   const panelWidth = Math.min(budget, Math.max(twoColumns ? 72 : 40, width(title) + 5, width(url) + 4));
   const inner = panelWidth - 4;

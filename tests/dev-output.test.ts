@@ -36,10 +36,26 @@ test('frame widths, wrapping and two-column boundary honor the destination colum
   expect(stacked.findIndex((row) => row.includes('恢复'))).toBeLessThan(stacked.findIndex((row) => row.includes('模式')));
   const paired = frame(renderDevOverview(content, tty(56)));
   expect(paired.find((row) => row.includes('作品'))).toContain('模式');
-  const ascii = renderDevOverview(content, tty(56, { LANG: 'zh_CN.UTF-8', NO_COLOR: '1' }));
+});
+
+test('a Chinese UTF-8 tmux terminal keeps the rounded solid frame without color', () => {
+  const output = renderDevOverview(content, tty(56, { LANG: 'zh_CN.UTF-8', TERM: 'tmux-256color', NO_COLOR: '1' }));
+  const rows = frame(output);
+  expect(rows[0]).toMatch(/^╭─ Vibe 图解 ─+╮$/);
+  expect(rows.slice(1, -1).every((row) => row.startsWith('│ ') && row.endsWith(' │'))).toBe(true);
+  expect(rows.at(-1)).toMatch(/^╰─+╯$/);
+  expect(rows.every((row) => Bun.stringWidth(row) === 56)).toBe(true);
+  expect(output).toContain('○ 服务：运行中');
+  expect(output).not.toContain('\x1b');
+});
+
+test('ASCII fallback depends on glyph support or measured width, not language', () => {
+  const format = tty(56, { LANG: 'zh_CN.UTF-8', NO_COLOR: '1' });
+  const ascii = renderDevOverview(content, { ...format, ambiguousIsNarrow: false });
   expect(ascii).toStartWith('+- Vibe 图解 ');
   expect(ascii).toContain('- 服务：运行中');
   expect(frame(ascii).every((row) => Bun.stringWidth(row, { ambiguousIsNarrow: false }) === 56)).toBe(true);
+  expect(renderDevOverview(content, tty(56, { LANG: 'C', NO_COLOR: '1' }))).toStartWith('+- Vibe 图解 ');
 });
 
 test('columns preserve graphemes, URL bytes and a title that cannot fit the border', () => {
