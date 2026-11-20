@@ -3,21 +3,25 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#080809">
+  <meta name="theme-color" content="#090a0d">
   <title>Hadoop 生态圈｜数据工厂</title>
+  <link rel="stylesheet" href="../../ui/site.css">
   <link rel="stylesheet" href="./src/styles.css">
   <link rel="stylesheet" href="../../covers/editor.css">
   <script type="module" src="./src/main.ts"></script>
   <script type="module" src="../../covers/editor.ts"></script>
 </head>
 <body>
-  <header class="masthead">
-    <div class="shell header-inner">
-      <a class="brand" href="../../" aria-label="返回作品目录">vibeV</a>
-      <h1>Hadoop 生态圈</h1>
+  <header class="sitebar">
+    <div class="sitebar-inner">
+      <a class="brand" href="../../" aria-label="vibeV，返回作品目录">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M10 8.5v7l5.5-3.5z" fill="currentColor"/></svg>
+        vibeV
+      </a>
     </div>
   </header>
-  <main class="shell viewer">
+  <main class="viewer">
+      <h1>Hadoop 生态圈</h1>
       <section class="player" id="player" aria-label="Hadoop 网页播放器" tabindex="0">
         <div class="picture" id="picture">
           <canvas id="stage" width="1920" height="1080" aria-hidden="true"></canvas>
@@ -42,13 +46,14 @@
         </div>
       </section>
 
-    <nav class="chapter-panel" aria-label="章节">
+    <p id="transcript" class="transcript" aria-label="当前字幕"></p>
+    <nav class="chapter-panel" aria-labelledby="chapter-heading">
+      <h2 class="section-title" id="chapter-heading">章节</h2>
       <ol id="chapters" class="chapters"></ol>
     </nav>
-    <p id="transcript" class="transcript" aria-label="当前字幕"></p>
     <form class="cover-editor" data-cover-editor="hadoop" aria-labelledby="cover-heading" hidden>
-      <h2 id="cover-heading">作品封面</h2>
-      <p id="cover-help">用于首页作品卡片。支持 PNG、JPEG、WebP，最大 5 MB，建议 3:2。</p>
+      <h2 class="section-title" id="cover-heading">作品封面</h2>
+      <p id="cover-help">首页按 16:9 居中裁切。支持 PNG、JPEG、WebP，最大 5 MB。</p>
       <div class="cover-actions">
         <input type="file" aria-label="选择封面图片" aria-describedby="cover-help" accept="image/png,image/jpeg,image/webp" required>
         <button type="submit">上传封面</button>

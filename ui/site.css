@@ -1,0 +1,61 @@
+:root {
+  color-scheme: dark;
+  --page: #0d0f16;
+  --mast: #090a0d;
+  --surface: #171a23;
+  --raised: #222631;
+  --edge: #313644;
+  --control-edge: #6a7382;
+  --ink: #f2f4f7;
+  --muted: #b2bac7;
+  --action: #ebf5f7;
+  --on-action: #122e3a;
+  --focus: #a7dfdb;
+  --gutter: clamp(16px, 5.5vw, 120px);
+  font-family: "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--page);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-block-size: 100svh;
+  background: url('./backdrop.svg') center top / cover no-repeat;
+}
+button, input { font: inherit; }
+button:enabled { cursor: pointer; }
+button:disabled { opacity: .5; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; }
+
+.sitebar { background: var(--mast); border-block-end: 1px solid var(--edge); }
+.sitebar-inner {
+  width: min(100% - 2 * clamp(16px, 3vw, 70px), 2340px);
+  min-block-size: 64px;
+  display: flex;
+  align-items: center;
+  margin-inline: auto;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-block-size: 40px;
+  padding-inline: 14px;
+  border: 1px solid #454a56;
+  border-radius: 999px;
+  background: var(--raised);
+  color: var(--ink);
+  font-size: 1.15rem;
+  font-weight: 780;
+  letter-spacing: -.04em;
+  text-decoration: none;
+}
+.brand svg { flex: none; }
+.brand:hover { background: var(--edge); }
+
+@media (max-width: 680px) {
+  :root { --gutter: 16px; }
+  .sitebar-inner { min-block-size: 56px; }
+  body { background-position: 58% top; }
+}

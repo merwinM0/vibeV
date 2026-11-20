@@ -19,7 +19,7 @@ Open the address printed in the terminal (default: `http://127.0.0.1:3000/`) and
 
 ### Set a homepage cover
 
-The homepage shows a blank gray tile by default. In the cover section below the player, choose an image and select Upload Cover. Upload another image to replace it, or select Remove Cover to restore the gray tile. PNG, JPEG, and WebP images up to 5 MB are supported; 3:2 is recommended. Covers persist across restarts in `db/covers.sqlite`, which is created automatically.
+The homepage fits five columns on wide screens and fewer on narrow ones. Covers are center-cropped to 16:9; a blank gray tile appears if no cover has been uploaded. In the cover section below the player, choose an image and select Upload Cover. Upload another image to replace it, or select Remove Cover to restore the gray tile. PNG, JPEG, and WebP images up to 5 MB are supported. Covers persist across restarts in `db/covers.sqlite`, which is created automatically.
 
 ```sh
 bun run typecheck
