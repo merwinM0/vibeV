@@ -1,0 +1,27 @@
+.cover-editor {
+  --cover-muted: #b9bcc8;
+  --cover-rule: #666973;
+  --cover-focus: #73f1fc;
+  margin: 24px 0 0;
+  padding: 16px 0 0;
+  border-block-start: 1px solid #32343d;
+  color: inherit;
+}
+.cover-editor h2 { margin: 0; font-size: .95rem; font-weight: 700; }
+.cover-editor p { margin: .45rem 0 0; color: var(--cover-muted); font-size: .82rem; line-height: 1.55; }
+.cover-editor .cover-error { color: #ffb3b7; }
+.cover-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-block: 12px; }
+.cover-actions input { max-inline-size: 100%; color: inherit; }
+.cover-actions button, .cover-actions input::file-selector-button {
+  min-height: 40px;
+  padding: 4px 12px;
+  border: 1px solid var(--cover-rule);
+  border-radius: 8px;
+  font: inherit;
+  font-size: .82rem;
+  color: inherit;
+  background: #15161a;
+}
+.cover-actions input::file-selector-button { margin-inline-end: 8px; }
+.cover-actions button:enabled:hover, .cover-actions input:enabled::file-selector-button:hover { border-color: var(--cover-focus); cursor: pointer; }
+.cover-actions :focus-visible { outline: 3px solid var(--cover-focus); outline-offset: 3px; }

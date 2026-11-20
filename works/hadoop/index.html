@@ -6,7 +6,9 @@
   <meta name="theme-color" content="#080809">
   <title>Hadoop 生态圈｜数据工厂</title>
   <link rel="stylesheet" href="./src/styles.css">
+  <link rel="stylesheet" href="../../covers/editor.css">
   <script type="module" src="./src/main.ts"></script>
+  <script type="module" src="../../covers/editor.ts"></script>
 </head>
 <body>
   <header class="masthead">
@@ -44,6 +46,16 @@
       <ol id="chapters" class="chapters"></ol>
     </nav>
     <p id="transcript" class="transcript" aria-label="当前字幕"></p>
+    <form class="cover-editor" data-cover-editor="hadoop" aria-labelledby="cover-heading" hidden>
+      <h2 id="cover-heading">作品封面</h2>
+      <p id="cover-help">用于首页作品卡片。支持 PNG、JPEG、WebP，最大 5 MB，建议 3:2。</p>
+      <div class="cover-actions">
+        <input type="file" aria-label="选择封面图片" aria-describedby="cover-help" accept="image/png,image/jpeg,image/webp" required>
+        <button type="submit">上传封面</button>
+        <button type="button" hidden>移除封面</button>
+      </div>
+      <p role="status"></p>
+    </form>
   </main>
 </body>
 </html>
