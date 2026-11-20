@@ -1,0 +1,40 @@
+.avatar-page { width: min(100% - 2 * var(--gutter), 1120px); margin-inline: auto; padding-block: 20px 48px; }
+.intro { margin: 0 0 15px; }
+.intro h1 { margin: 0; font-size: clamp(1.2rem, 2.8vw, 1.65rem); line-height: 1.4; }
+.intro p, .lab-heading p { margin: .45em 0 0; color: var(--muted); font-size: .9rem; line-height: 1.55; }
+.clip, .lab { border: 1px solid var(--edge); border-radius: 14px; background: var(--surface); }
+.clip canvas { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; border-radius: 13px 13px 0 0; background: var(--mast); }
+.transport { padding: 8px 14px 12px; }
+.seek-label { display: flex; align-items: center; gap: 12px; font-size: .8rem; color: var(--muted); }
+input[type=range] { accent-color: var(--focus); cursor: pointer; }
+.seek-label input { flex: 1; min-width: 0; margin: 0; height: 26px; }
+.transport-row { display: flex; align-items: center; gap: 12px; margin-block-start: 6px; }
+.primary, .expand { min-height: 42px; padding-inline: 14px; border: 1px solid transparent; border-radius: 999px; font-size: .85rem; font-weight: 700; }
+.primary { color: var(--on-action); background: var(--action); }
+.primary:enabled:hover { background: var(--focus); }
+.expand { margin-inline-start: auto; border-color: var(--control-edge); background: var(--raised); color: var(--ink); }
+.expand:enabled:hover { background: var(--edge); }
+.clip-time { color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums; }
+.clip:fullscreen { border: 0; border-radius: 0; display: grid; place-content: center; justify-items: center; background: var(--mast); }
+.clip:fullscreen canvas { width: min(100vw, calc((100dvh - 100px) * 16 / 9)); border-radius: 0; }
+.clip:fullscreen .transport { width: min(90vw, 800px); }
+.screen-status { margin-block: 8px 0; font-size: .84rem; line-height: 1.5; color: var(--muted); }
+.screen-status:empty { display: none; }
+.film-caption { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); overflow: hidden; }
+.lab { margin-block-start: 24px; padding: clamp(12px, 2.7vw, 22px); }
+.lab-heading { margin-block-end: 16px; }
+.lab-heading h2, .cover-editor h2 { margin: 0; font-size: 1rem; }
+.lab-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: clamp(14px, 3vw, 32px); align-items: center; }
+.lab canvas { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; border-radius: 10px; }
+.lab-controls { display: grid; gap: 8px; min-width: 0; }
+.lab-controls label { font-size: .85rem; }
+.lab-controls small, #pose-time { color: var(--muted); margin-inline-start: .4em; }
+.lab-controls select { padding: 8px 12px; min-height: 40px; background: var(--raised); border: 1px solid var(--control-edge); border-radius: 8px; color: inherit; font: inherit; font-size: .86rem; }
+.lab-controls input { max-width: 100%; min-width: 0; font-size: .85rem; }
+.lab-controls input::file-selector-button { min-height: 36px; border: 1px solid var(--control-edge); background: var(--raised); color: var(--ink); border-radius: 8px; font: inherit; margin-inline-end: 8px; }
+.lab-controls .primary { justify-self: start; }
+
+@media (max-width: 680px) {
+  .lab-grid { grid-template-columns: minmax(0, 1fr); }
+  .film-caption { position: static; width: auto; height: auto; clip-path: none; overflow: visible; margin: 8px 2px 0; color: var(--muted); font-size: .85rem; line-height: 1.5; }
+}

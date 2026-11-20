@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090a0d">
+  <title>一张皮肤，怎么让角色动起来？｜vibeV</title>
+  <link rel="stylesheet" href="../../ui/site.css">
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="../../covers/editor.css">
+  <script type="module" src="./main.ts"></script>
+  <script type="module" src="../../covers/editor.ts"></script>
+</head>
+<body>
+  <header class="sitebar">
+    <div class="sitebar-inner"><a class="brand" href="../../" aria-label="vibeV，返回作品目录">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M10 8.5v7l5.5-3.5z" fill="currentColor"/></svg> vibeV
+    </a></div>
+  </header>
+  <main class="avatar-page">
+    <header class="intro">
+      <h1>一张皮肤，怎么让角色动起来？</h1>
+      <p>30 秒测试片。用同一张 Minecraft 皮肤，展示贴图、关节和步态。</p>
+    </header>
+    <section class="clip" aria-label="30 秒角色动画" id="clip" tabindex="0">
+      <canvas id="film" width="1920" height="1080" aria-label="一张皮肤，怎么让角色动起来？"></canvas>
+      <div class="transport">
+        <label class="seek-label">播放进度<input id="seek" type="range" min="0" max="900" value="0" disabled></label>
+        <div class="transport-row">
+          <button id="play" class="primary" type="button" disabled>播放</button>
+          <span id="clock" class="clip-time">00:00 / 00:30</span>
+          <button id="expand" class="expand" type="button" disabled>全屏</button>
+        </div>
+      </div>
+    </section>
+    <p id="clip-status" class="screen-status" role="status">正在加载皮肤…</p>
+    <p id="film-caption" class="film-caption" aria-label="当前字幕"></p>
+    <noscript><p>开启 JavaScript 后即可播放角色样片。</p></noscript>
+
+    <section class="lab" aria-labelledby="lab-title" id="lab" hidden>
+      <header class="lab-heading">
+        <h2 id="lab-title">角色动作预览</h2>
+        <p>动作与皮肤彼此独立。下方换图只在当前页面预览，不会上传。</p>
+      </header>
+      <div class="lab-grid">
+        <canvas id="rig" width="800" height="600" aria-label="Minecraft 方块角色姿势预览"></canvas>
+        <div class="lab-controls">
+          <label for="local-skin">本地皮肤 <small>64×64 PNG</small></label>
+          <input type="file" id="local-skin" accept="image/png,.png">
+          <label for="model">手臂宽度</label>
+          <select id="model"><option value="auto">自动识别</option><option value="classic">标准 4 像素</option><option value="slim">细手臂 3 像素</option></select>
+          <label for="action">动作</label>
+          <select id="action"><option value="idle">待机</option><option value="walk">走路</option><option value="look">转头</option><option value="point">指向</option><option value="nod">点头</option></select>
+          <label for="angle">观察角度</label><input type="range" id="angle" min="-180" max="180" value="20">
+          <label for="pose">动作时间 <span id="pose-time">0.00 秒</span></label><input type="range" id="pose" min="0" max="4" step="0.01" value="0">
+          <button type="button" id="play-pose" class="primary">播放动作</button>
+          <p id="skin-status" class="screen-status" role="status"></p>
+        </div>
+      </div>
+    </section>
+
+    <form class="cover-editor" data-cover-editor="mc-avatar" aria-labelledby="cover-heading" hidden>
+      <h2 id="cover-heading">作品封面</h2>
+      <p id="cover-help">首页按 16:9 居中裁切。支持 PNG、JPEG、WebP，最大 5 MB。</p>
+      <div class="cover-actions">
+        <input type="file" aria-label="选择封面图片" aria-describedby="cover-help" accept="image/png,image/jpeg,image/webp" required>
+        <button type="submit">上传封面</button>
+        <button type="button" hidden>移除封面</button>
+      </div>
+      <p role="status"></p>
+    </form>
+    <img id="sample-skin" src="../../avatar/mc_mon.png" alt="" width="64" height="64" hidden>
+  </main>
+</body>
+</html>

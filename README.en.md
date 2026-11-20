@@ -17,6 +17,12 @@ bun run dev
 
 Open the address printed in the terminal (default: `http://127.0.0.1:3000/`) and select Hadoop Ecosystem on the homepage to open `/works/hadoop/`. Select Play to hear the narration, or use the mute, seek, and full-screen controls. Use the links below the player to switch to the full edition (完整版图解). The current chapter stays centered; scroll, swipe, or click the chapter strip to switch chapters. While the player has focus, Space toggles playback and the arrow keys skip back/forward 5 seconds. The timeline uses native keyboard controls when focused. On narrow screens, the current caption is also shown below the player.
 
+### Minecraft character sample
+
+Open “一张皮肤，怎么让角色动起来？” (`/works/mc-avatar/`) from the homepage. The 30-second sample uses `avatar/mc_mon.png` to explain textures, joints, and walking. The controls below it let you preview poses, rotate the view, or try another 64×64 PNG skin locally.
+
+To export the sample, install Chromium and FFmpeg with libx264, then run `bun run avatar:render`. If Chromium is not on `PATH`, use `env CHROMIUM_BIN=/path/to/chromium bun run avatar:render`. This writes a silent 1080p, 30 fps video to `exports/mc-avatar-30s.mp4`. See the [storyboard and reuse notes (Chinese)](docs/MC角色样片.md).
+
 ### Set a homepage cover
 
 The homepage fits five columns on wide screens and fewer on narrow ones. Covers are center-cropped to 16:9; a blank gray tile appears if no cover has been uploaded. In the cover section below the player, choose an image and select Upload Cover. Upload another image to replace it, or select Remove Cover to restore the gray tile. PNG, JPEG, and WebP images up to 5 MB are supported. Covers persist across restarts in `db/covers.sqlite`, which is created automatically.
