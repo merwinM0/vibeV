@@ -4,7 +4,7 @@ import { coverLimit } from '../covers/model';
 import { coverRoutes } from './cover-routes';
 import { coverStore, databaseLabel, databasePath, workSlugs } from './covers';
 import { cleanTerminalLine, renderDevOverview, terminalPresentation } from './dev-output';
-import { pageEntries, redirectTo, root } from './pages';
+import { mediaFiles, pageEntries, redirectTo, root } from './pages';
 
 async function start() {
   const routes: Record<string, Bun.HTMLBundle | Response> = {};
@@ -24,12 +24,15 @@ async function start() {
     throw new Error(`无法初始化 SQLite，请确认 ${databaseLabel} 可写且数据库文件有效。`);
   }
   const slugs = workSlugs(entries);
+  const media = Object.fromEntries(mediaFiles.map((path) => [`/${path}`, {
+    GET: () => new Response(Bun.file(join(root, path))),
+  }]));
   const server = Bun.serve({
     hostname: '127.0.0.1',
     port: process.env.PORT ?? 3000,
     development: { hmr: true, console: true },
     maxRequestBodySize: coverLimit,
-    routes: { ...routes, ...coverRoutes(store, slugs) },
+    routes: { ...routes, ...media, ...coverRoutes(store, slugs) },
   });
 
   console.log(renderDevOverview({

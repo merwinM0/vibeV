@@ -38,7 +38,13 @@
 .clock, .chapter-number, .chapter-time { font-variant-numeric: tabular-nums; }
 .clock { display: flex; gap: .5em; font-size: .83rem; white-space: nowrap; }
 .divider, #duration { color: var(--muted); }
-.silent { margin-inline-start: auto; display: flex; gap: 5px; align-items: center; white-space: nowrap; font-size: .76rem; color: var(--muted); }
+.silent, .mute { margin-inline-start: auto; white-space: nowrap; font-size: .76rem; color: var(--muted); }
+.mute { min-height: 42px; padding-inline: 9px; border: 1px solid var(--control-edge); border-radius: 999px; background: var(--raised); color: var(--ink); }
+.mute[aria-pressed="true"] { border-color: var(--action); }
+.audio-status { margin: 8px 0 0; color: var(--muted); font-size: .84rem; }
+.editions { display: flex; gap: 12px; margin: 10px 2px 0; font-size: .84rem; }
+.editions a { color: var(--muted); text-underline-offset: .22em; }
+.editions a[aria-current] { color: var(--ink); font-weight: 700; text-decoration: none; }
 .expand { flex: 0 0 42px; height: 42px; border: 1px solid var(--control-edge); color: var(--ink); background: var(--raised); }
 .expand:enabled:hover { background: var(--edge); }
 
@@ -90,7 +96,6 @@
   .transcript { position: static; width: auto; height: auto; margin: 9px 2px 0; overflow: visible; clip-path: none; color: var(--muted); font-size: .84rem; line-height: 1.6; }
 }
 @media (max-width: 385px) {
-  .silent svg { display: none; }
   .clock { font-size: .76rem; }
   .play { min-width: 68px; padding-inline: 8px; }
 }

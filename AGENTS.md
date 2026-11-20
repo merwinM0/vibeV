@@ -2,7 +2,7 @@
 
 - `Hadoop生态圈_Vibe视频_完整分镜表.md` 是时间、镜头与技术关系的依据。用户未确认前不扩展章节或加入音频、导出流程。`vibe-make/` 是现有独立 Skill 仓库，不随网页代码提交。
 - 根目录 `index.html` 和 `catalog/styles.css` 定义作品目录。每部作品放到 `works/<slug>/`，各自有 `index.html`、代码和素材。开发、构建自动发现这些页面；新作入口手动加入首页。站内链接和资源路径用相对路径，保证 `dist/` 可部署至域名根目录或子目录。`ui/site.css` 与 `ui/backdrop.svg` 为首页和播放页提供共享的深色配色、胶囊顶栏和几何底纹。作品卡只展示名称和 16:9 圆角封面，没上传时显示纯灰色占位。保持 `data-cover`、`data-cover-editor` 与作品目录名一致。
-- `works/hadoop/` 中的 `index.html` 和 `src/styles.css` 定义播放器；`src/main.ts` 负责 DOM 和播放时钟，`src/chapter-reel.ts` 管理居中章节和滚动切换，不持有独立播放时钟；`src/timeline.ts` 汇总全片章节、镜头和字幕，`src/continuation.ts` 提供 03–09 章的字幕与起点；`src/visual/` 以 Canvas 按主题分组绘制 59 镜。网站以 Bun 打包，不依赖客户端框架。
+- `works/hadoop/` 中的 `index.html` 和 `src/styles.css` 定义播放器；`src/main.ts` 负责 DOM 和播放时钟，`src/chapter-reel.ts` 管理居中章节和滚动切换，不持有独立播放时钟；`src/timeline.ts` 汇总全片章节、镜头和字幕，`src/continuation.ts` 提供 03–09 章的字幕与起点；`src/visual/` 以 Canvas 按主题分组绘制 59 镜。配音版由 `src/narration.ts` 按录音片段记录逐句时间、对应镜头和关键动作锚点，浏览器以 `dub/narration.mp3` 的媒体时间驱动画面；`?version=full` 仍使用原分镜时间轴。网站以 Bun 打包，不依赖客户端框架。
 - `covers/` 存浏览器封面逻辑和共享格式配置；`scripts/covers.ts` 与 `scripts/cover-routes.ts` 负责 SQLite 和本机接口。图片和格式一并保存在 `db/covers.sqlite`，不进 Git。开发和预览可编辑，构建只读并导出 `.json` 和图片快照；静态站不提供编辑接口，不拷贝数据库。
 - 时间轴统一用 30fps 帧标尺。镜头由帧计算，不依赖前一帧、独立定时器或无种子的随机数。16:9 舞台以 1920×1080 为基准，控件在画面外。数据、元数据和依赖分别用实线、虚线和点线；颜色不作为唯一辨别手段。
 - 修改镜头时核对分镜，验证开始、关键动作、结束及进度跳转；改时间轴时同步更新章节边界和字幕锚点。提交前执行 `bun run typecheck`、`bun test`、`bun run build`，并在浏览器预览。如果使用说明改变，同步维护中英文 README。

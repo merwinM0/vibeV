@@ -1,6 +1,7 @@
 import { PlaybackClock } from './clock';
 import { chapterReel } from './chapter-reel';
-import { duration, frameAt, timecode } from './timeline';
+import { narrationChapters, narrationDuration, narrationFrameAt } from './narration';
+import { chapters, duration, frameAt, timecode } from './timeline';
 import { Film } from './visual/film';
 
 function element<T extends HTMLElement>(id: string, kind: { new(): T }): T {
@@ -24,15 +25,44 @@ const chapterList = element('chapters', HTMLOListElement);
 const motion = matchMedia('(prefers-reduced-motion: reduce)');
 
 function attach(ctx: CanvasRenderingContext2D) {
+  const audio = element('narration', HTMLAudioElement);
+  const mute = element('mute', HTMLButtonElement);
+  const audioStatus = element('audio-status', HTMLParagraphElement);
+  const fullVersion = new URLSearchParams(location.search).get('version') === 'full';
+  if (fullVersion) {
+    element('dubbed-edition', HTMLAnchorElement).removeAttribute('aria-current');
+    element('full-edition', HTMLAnchorElement).setAttribute('aria-current', 'page');
+    element('silent', HTMLElement).hidden = false;
+  } else {
+    const src = audio.getAttribute('data-src');
+    if (src) audio.src = src;
+    mute.hidden = false;
+  }
+
   const film = new Film(ctx);
   const clock = new PlaybackClock();
+  const runtime = fullVersion ? duration : narrationDuration;
+  const totalLabel = timecode(Math.round(runtime));
+  const timelineFrameAt = fullVersion ? frameAt : narrationFrameAt;
   let raf = 0;
   let lastFrame = -1;
   let lastCaption = '';
-  const reel = chapterReel(chapterList, jump);
+  let reachedEnd = false;
+  const reel = chapterReel(chapterList, fullVersion ? chapters : narrationChapters, jump);
+
+  // The recording is the only running clock in the dubbed edition. Buffering,
+  // throttled frames and seeking cannot make the captions run ahead of speech.
+  function current(now: number) {
+    if (fullVersion) return clock.current(now);
+    return audio.ended || reachedEnd ? runtime : Math.min(runtime, audio.currentTime);
+  }
+
+  function playing() {
+    return fullVersion ? clock.playing : !audio.paused && !audio.ended && !audio.error;
+  }
 
   function paint(seconds: number) {
-    const { scene, frame, elapsed, caption } = frameAt(seconds);
+    const { scene, frame, elapsed, caption } = timelineFrameAt(seconds);
     if (frame !== lastFrame) {
       film.draw(scene, elapsed, !motion.matches);
       lastFrame = frame;
@@ -43,14 +73,14 @@ function attach(ctx: CanvasRenderingContext2D) {
     }
     if (player.dataset.scene !== scene.id) player.dataset.scene = scene.id;
     reel.show(scene.chapter);
-    const position = timecode(seconds);
+    const position = seconds === runtime ? totalLabel : timecode(seconds);
     if (timeLabel.textContent !== position) {
       timeLabel.textContent = position;
-      seek.setAttribute('aria-valuetext', `${position} / ${timecode(duration)}`);
+      seek.setAttribute('aria-valuetext', `${position} / ${totalLabel}`);
     }
     seek.value = String(seconds);
-    seekTrack.style.setProperty('--ratio', String(seconds / duration));
-    const mode = clock.playing ? 'pause' : seconds === duration ? 'replay' : 'play';
+    seekTrack.style.setProperty('--ratio', String(seconds / runtime));
+    const mode = playing() ? 'pause' : seconds === runtime ? 'replay' : 'play';
     if (play.dataset.mode !== mode) {
       play.dataset.mode = mode;
       playLabel.textContent = mode === 'pause' ? '暂停' : mode === 'replay' ? '重播' : '播放';
@@ -59,10 +89,10 @@ function attach(ctx: CanvasRenderingContext2D) {
 
   function tick(now: number) {
     raf = 0;
-    const seconds = clock.current(now);
-    if (seconds === duration) clock.pause(now);
+    const seconds = current(now);
+    if (fullVersion && seconds === runtime) clock.pause(now);
     paint(seconds);
-    if (clock.playing) raf = requestAnimationFrame(tick);
+    if (playing()) raf = requestAnimationFrame(tick);
   }
 
   function render(now = performance.now()) {
@@ -72,32 +102,58 @@ function attach(ctx: CanvasRenderingContext2D) {
 
   function jump(seconds: number) {
     const now = performance.now();
-    clock.seek(seconds, now);
+    if (fullVersion) clock.seek(seconds, now);
+    else {
+      const target = Math.max(0, Math.min(runtime, seconds));
+      reachedEnd = target === runtime;
+      if (reachedEnd) audio.pause();
+      audio.currentTime = reachedEnd && Number.isFinite(audio.duration) ? audio.duration : target;
+    }
     render(now);
+  }
+
+  function audioFailed() {
+    audioStatus.textContent = '配音无法播放，请刷新重试，或切换到完整版图解。';
+    audioStatus.hidden = false;
+    render();
   }
 
   function toggle() {
     const now = performance.now();
-    if (clock.playing) clock.pause(now);
-    else clock.play(now);
+    if (fullVersion) {
+      if (clock.playing) clock.pause(now);
+      else clock.play(now);
+    } else if (playing()) audio.pause();
+    else {
+      if (current(now) === runtime) jump(0);
+      audioStatus.hidden = true;
+      void audio.play().catch((error: unknown) => {
+        if (!(error instanceof DOMException) || error.name !== 'AbortError') audioFailed();
+      });
+    }
     render(now);
   }
 
+  if (!fullVersion) {
+    for (const event of ['play', 'pause', 'seeked', 'ended']) audio.addEventListener(event, () => render());
+    audio.addEventListener('error', audioFailed);
+    mute.addEventListener('click', () => {
+      audio.muted = !audio.muted;
+      mute.setAttribute('aria-pressed', String(audio.muted));
+    });
+  }
   play.addEventListener('click', toggle);
   seek.addEventListener('input', () => jump(seek.valueAsNumber));
   player.addEventListener('keydown', (event) => {
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.target !== player) return;
     if (event.key === ' ' && !event.repeat) toggle();
     else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-      jump(clock.current(performance.now()) + (event.key === 'ArrowLeft' ? -5 : 5));
+      jump(current(performance.now()) + (event.key === 'ArrowLeft' ? -5 : 5));
     } else return;
     event.preventDefault();
   });
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden || !clock.playing) return;
-    const now = performance.now();
-    clock.pause(now);
-    render(now);
+    if (document.hidden && playing()) toggle();
   });
   fullscreen.addEventListener('click', async () => {
     try {
@@ -119,9 +175,9 @@ function attach(ctx: CanvasRenderingContext2D) {
   void document.fonts.ready.then(refreshFrame);
   seek.disabled = play.disabled = false;
   fullscreen.disabled = !document.fullscreenEnabled;
-  seek.max = String(duration);
-  seek.setAttribute('aria-valuetext', `00:00 / ${timecode(duration)}`);
-  durationLabel.textContent = timecode(duration);
+  seek.max = String(runtime);
+  seek.setAttribute('aria-valuetext', `00:00 / ${totalLabel}`);
+  durationLabel.textContent = totalLabel;
   render();
 }
 

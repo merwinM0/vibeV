@@ -23,6 +23,7 @@
   <main class="viewer">
       <h1>Hadoop 生态圈</h1>
       <section class="player" id="player" aria-label="Hadoop 网页播放器" tabindex="0">
+        <audio id="narration" data-src="./dub/narration.mp3" preload="none" hidden></audio>
         <div class="picture" id="picture">
           <canvas id="stage" width="1920" height="1080" aria-hidden="true"></canvas>
           <div class="frame-captions" aria-hidden="true"><p id="caption"></p></div>
@@ -38,13 +39,19 @@
               <span id="play-label">播放</span>
             </button>
             <span class="clock"><span id="time">00:00</span><span class="divider">/</span><span id="duration">07:15</span></span>
-            <span class="silent"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 6 6 9H3v6h3l5 3zM16 9l5 6m0-6-5 6"/></svg> 无声播放</span>
+            <button id="mute" class="mute" type="button" aria-pressed="false" hidden>静音</button>
+            <span id="silent" class="silent" hidden>无声播放</span>
             <button id="expand" class="expand" type="button" aria-label="全屏" title="全屏" disabled>
               <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4H4v5m11-5h5v5m0 6v5h-5M4 15v5h5"/></svg>
             </button>
           </div>
+          <p class="audio-status" id="audio-status" role="status" hidden></p>
         </div>
       </section>
+      <nav class="editions" aria-label="播放版本">
+        <a id="dubbed-edition" href="./" aria-current="page">配音版</a>
+        <a id="full-edition" href="?version=full">完整版图解</a>
+      </nav>
 
     <p id="transcript" class="transcript" aria-label="当前字幕"></p>
     <nav class="chapter-panel" aria-labelledby="chapter-heading">

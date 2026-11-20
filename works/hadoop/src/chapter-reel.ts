@@ -1,7 +1,9 @@
-import { chapters, timecode, type ChapterId } from './timeline';
+import { timecode, type ChapterId } from './timeline';
 import { chapterHues } from './visual/ink';
 
-export function chapterReel(list: HTMLOListElement, jump: (seconds: number) => void) {
+type ChapterMarker = { id: ChapterId; start: number; title: string };
+
+export function chapterReel(list: HTMLOListElement, chapters: readonly ChapterMarker[], jump: (seconds: number) => void) {
   let current = -1;
   let scrolling = false;
   let settleTimer = 0;
