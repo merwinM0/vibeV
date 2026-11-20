@@ -1,6 +1,10 @@
 export const fps = 30;
 export const duration = 106;
 export const frameCount = duration * fps;
+export const writeLaunch = 3;
+export const writeTravel = 5.7;
+export const repairLaunch = .65;
+export const repairTravel = 3.3;
 
 export const chapters = [
   { cue: '01', source: '第 06 章节选', title: '写入管线', description: '同一个 B2，沿管线写出三份。', start: 0 },
@@ -10,7 +14,7 @@ export const chapters = [
 
 export type NodeState = 'empty' | 'copy' | 'suspect' | 'offline' | 'corrupt';
 export type Route = 'none' | 'request' | 'reply' | 'locate' | 'write' | 'ack' | 'readA' | 'readB' | 'heartbeat' | 'order' | 'repair';
-export type Gesture = 'present' | 'inspect' | 'pass' | 'trace' | 'nod' | 'switch' | 'stepBack';
+export type Gesture = 'present' | 'inspect' | 'pass' | 'trace' | 'focus' | 'switch' | 'stepBack';
 type Beat = { start: number; title: string; deck: string; caption: string; tag: string; meta: string;
   route: Route; gesture: Gesture; states: readonly [NodeState, NodeState, NodeState, NodeState] };
 const empty = ['empty', 'empty', 'empty', 'empty'] as const;
@@ -35,7 +39,7 @@ export const beats: readonly Beat[] = [
     route: 'locate', gesture: 'inspect', states: triple },
   { start: 46, title: '直接读较近的副本', deck: '本例先读甲，字节直接回到客户端',
     caption: '客户端从较近且可用的甲读取 B2，并检查读回的数据。', tag: '← 从甲读 B2', meta: '只负责提供位置',
-    route: 'readA', gesture: 'nod', states: triple },
+    route: 'readA', gesture: 'focus', states: triple },
   { start: 56, title: '校验不符，就换副本', deck: '这是一个独立的损坏假设，不是节点失联',
     caption: '如果甲返回的内容校验不符，客户端可以改从乙读，不必拼三份。', tag: '← 从乙读 B2', meta: '尚有可读副本',
     route: 'readB', gesture: 'switch', states: ['corrupt', 'copy', 'copy', 'empty'] },
@@ -50,7 +54,7 @@ export const beats: readonly Beat[] = [
     route: 'order', gesture: 'trace', states: down },
   { start: 92, title: '乙发字节，丁存副本', deck: '调度走控制层；B2 的字节在节点之间传输',
     caption: '乙向丁传输 B2；等丁的副本就绪，可用副本回到三份。', tag: '补副本 · 乙 → 丁', meta: '本次只补 B2',
-    route: 'repair', gesture: 'pass', states: ['offline', 'copy', 'copy', 'copy'] },
+    route: 'repair', gesture: 'focus', states: ['offline', 'copy', 'copy', 'copy'] },
   { start: 100, title: '回到三份，不等于有备份', deck: '一个逻辑块 B2 · 三个可读副本：乙、丙、丁',
     caption: '如果同一块的所有副本都丢失，HDFS 不能凭空补出来。', tag: '补齐完成 · 3 / 3', meta: '副本不是独立备份',
     route: 'none', gesture: 'stepBack', states: ['offline', 'copy', 'copy', 'copy'] },
@@ -74,11 +78,13 @@ export function frameAt(position: number) {
   const length = (beats[index + 1]?.start ?? duration) - beat.start;
   // Model the read query and response separately without adding another shot boundary.
   const route = beat.route === 'locate' ? local < 3.5 ? 'request' : 'reply' : beat.route;
-  const tag = beat.route === 'locate' && route === 'reply' ? '返回 B2 的位置' : beat.tag;
+  const tag = beat.route === 'locate' && route === 'reply' ? '返回 B2 的位置'
+    : route === 'write' && local < writeLaunch ? '演示道具 · 放到客户端写入口' : beat.tag;
   const routeTime = beat.route === 'locate' && route === 'reply' ? local - 3.5 : local;
   // A representative packet lights the copies in delivery order.
-  const travel = route === 'write' ? 7.3 : route === 'repair' ? 3.3 : beat.route === 'locate' ? 2.2 : 3.8;
-  const progress = clamp((routeTime - .65) / travel);
+  const travel = route === 'write' ? writeTravel : route === 'repair' ? repairTravel : beat.route === 'locate' ? 2.2 : 3.8;
+  const start = route === 'write' ? writeLaunch : repairLaunch;
+  const progress = clamp((routeTime - start) / travel);
   const states = beat.states.map((state, i): NodeState => {
     if (beat.route === 'write' && progress < [1 / 3, 2 / 3, 1][i]) return 'empty';
     if (beat.route === 'repair' && i === 3 && progress < 1) return 'empty';

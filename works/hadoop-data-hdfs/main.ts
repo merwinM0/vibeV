@@ -1,5 +1,6 @@
 import { makeDiagram } from './diagram';
 import { makeHost } from './host';
+import { lensAt, stageHeight, stageWidth } from './stage';
 import { beats, chapters, fps, frameAt, frameCount, timecode } from './timeline';
 
 function byId(id: string) { return document.getElementById(id)!; }
@@ -10,6 +11,8 @@ function control<T extends HTMLElement>(id: string, kind: { new(): T }) {
 }
 
 const player = byId('player');
+const stage = player.querySelector<HTMLElement>('.stage')!;
+const world = byId('world');
 const seek = control('seek', HTMLInputElement);
 const play = control('play', HTMLButtonElement);
 const prev = control('prev', HTMLButtonElement);
@@ -62,6 +65,9 @@ function paint(force = false) {
     filmTitle.textContent = state.beat.title;
     filmDeck.textContent = state.beat.deck;
     filmCaption.textContent = reading.textContent = state.beat.caption;
+    const { route } = state.beat;
+    stage.dataset.cue = route === 'heartbeat' || route === 'readB' ? 'fault'
+      : ['write', 'readA', 'repair', 'none'].includes(route) ? 'bytes' : 'control';
     sceneNumber.textContent = `镜头 ${String(state.index + 1).padStart(2, '0')} / ${beats.length}`;
     prev.disabled = state.index === 0;
     next.disabled = state.index === beats.length - 1;
@@ -76,6 +82,10 @@ function paint(force = false) {
     filmChapter.textContent = chapters[state.chapter].title;
   }
   const reduced = motion.matches;
+  const lens = lensAt(state, reduced);
+  world.style.setProperty('--focus-point', `${lens.x / stageWidth * 100}% ${lens.y / stageHeight * 100}%`);
+  world.style.setProperty('--zoom', lens.zoom.toFixed(4));
+  world.style.setProperty('--shift-x', `${(lens.shiftX / stageWidth * 100).toFixed(3)}%`);
   diagram(state, reduced);
   renderHost?.(state, reduced);
   const count = `${state.copies} / 3`;

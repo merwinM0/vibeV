@@ -19,7 +19,7 @@ Open the address printed in the terminal (default: `http://127.0.0.1:3000/`) and
 
 ### New Hadoop sample
 
-Open “从 MC 交易日志到 HDFS · 样片” (`/works/hadoop-data-hdfs/`) from the homepage. This **1:46 silent explainer** follows block B2 through writing, reading, failover to another replica, and re-replication. Jump by chapter or shot, scrub, or use fullscreen. Subtle head scaling uses simulated speech beats rather than a recording. See the [sample storyboard (Chinese)](works/hadoop-data-hdfs/分镜.md).
+Open “从 MC 交易日志到 HDFS · 样片” (`/works/hadoop-data-hdfs/`) from the homepage. This **1:46 silent explainer** follows block B2 through writing, reading, failover to another replica, and re-replication. Jump by chapter or shot, scrub, or use fullscreen. The page shares the original dark site theme. The film adds a B2 pickup and placement, focused camera pushes, and transfer particles. Subtle head scaling still uses simulated speech beats. See the [sample storyboard](works/hadoop-data-hdfs/分镜.md) and [production guidelines](SKILL.md) (Chinese).
 
 ### Minecraft character sample
 

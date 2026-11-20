@@ -1,4 +1,6 @@
+import { clamp, writeLaunch } from './timeline';
 import type { NodeState, Route, SampleFrame } from './timeline';
+import { intake } from './stage';
 
 const nodes = [
   { x: 24, name: '客户端', kind: 'CLIENT' },
@@ -17,16 +19,19 @@ const stroke = {
   repair: ['M621 391V352H1133V391'],
 } satisfies Record<Route, string[]>;
 
-const motionPaths: Partial<Record<Route, string>> = { write: 'M112 441H877', ack: 'M877 441H112' };
+const motionPaths: Partial<Record<Route, string[]>> = {
+  write: [`M${intake.x} ${intake.y}V441H365`, 'M365 441H621', 'M621 441H877'],
+  ack: ['M877 441H112'],
+};
 const controls = new Set<Route>(['request', 'reply', 'ack', 'heartbeat', 'order']);
 const states: Record<NodeState, string> = { empty: '—', copy: '●  B2', corrupt: '校验不符', offline: '超时不可用', suspect: '等待超时' };
 
 export function makeDiagram(svg: SVGSVGElement) {
   svg.innerHTML = `
     <defs>
-      <marker id="arrow-control" markerWidth="9" markerHeight="10" refX="7" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M1 1l6 4-6 4" fill="none" stroke="var(--control-edge)" stroke-width="2"/></marker>
-      <marker id="arrow-data" markerWidth="13" markerHeight="14" refX="10" refY="7" orient="auto" markerUnits="userSpaceOnUse"><path d="M2 2l8 5-8 5" fill="none" stroke="var(--accent)" stroke-width="2.8"/></marker>
-      <marker id="arrow-ack" markerWidth="13" markerHeight="14" refX="10" refY="7" orient="auto" markerUnits="userSpaceOnUse"><path d="M2 2l8 5-8 5" fill="none" stroke="var(--control-edge)" stroke-width="2.5"/></marker>
+      <marker id="arrow-control" markerWidth="9" markerHeight="10" refX="7" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M1 1l6 4-6 4" fill="none" stroke="var(--film-control)" stroke-width="2"/></marker>
+      <marker id="arrow-data" markerWidth="13" markerHeight="14" refX="10" refY="7" orient="auto" markerUnits="userSpaceOnUse"><path d="M2 2l8 5-8 5" fill="none" stroke="var(--film-data)" stroke-width="2.8"/></marker>
+      <marker id="arrow-ack" markerWidth="13" markerHeight="14" refX="10" refY="7" orient="auto" markerUnits="userSpaceOnUse"><path d="M2 2l8 5-8 5" fill="none" stroke="var(--film-control)" stroke-width="2.5"/></marker>
     </defs>
     <rect class="layer" x="1" y="1" width="1278" height="263" rx="26"/>
     <rect class="layer data-layer" x="1" y="282" width="1278" height="283" rx="26"/>
@@ -35,8 +40,8 @@ export function makeDiagram(svg: SVGSVGElement) {
     <text class="diagram-eyebrow" x="28" y="330">02 / 数据传输</text>
     <path class="legend-line data" d="M1030 322h42"/><text class="diagram-legend" x="1090" y="330">实线 · 文件字节</text>
     <g id="routes" fill="none"><path class="route"/><path class="route"/><path class="route"/></g>
-    <path id="motion-path" fill="none" stroke="none"/>
-    <circle id="packet" r="8" visibility="hidden"/>
+    <g id="intake" visibility="hidden"><rect class="intake" x="${intake.x - 24}" y="${intake.y - 24}" width="48" height="48" rx="9"/></g>
+    <g id="motion-paths"><path fill="none" stroke="none"/><path fill="none" stroke="none"/><path fill="none" stroke="none"/></g>
     <g transform="translate(455 81)">
       <rect class="name-card" width="365" height="113" rx="20"/>
       <g class="nn-icon" transform="translate(20 24)"><rect width="49" height="49" rx="13"/><path d="M13 16h23M13 24.5h23M13 33h15"/></g>
@@ -55,16 +60,20 @@ export function makeDiagram(svg: SVGSVGElement) {
         <text class="node-note state-label" x="15" y="75">${i === 0 ? '文件读写' : '—'}</text>
       </g>`).join('')}
     </g>
+    <g id="signals" visibility="hidden">${Array.from({ length: 7 }, (_, i) => `<circle class="signal ${i === 0 ? 'signal-lead' : ''}" r="${i === 0 ? 7.8 : 4 - i * .37}" opacity="${1 - i * .12}"/>`).join('')}</g>
     <text class="route-tag" id="route-tag" x="1249" y="543" text-anchor="end"></text>`;
 
   const lines = [...svg.querySelectorAll<SVGPathElement>('.route')];
-  const motion = svg.querySelector<SVGPathElement>('#motion-path')!;
-  const token = svg.querySelector<SVGCircleElement>('#packet')!;
+  const motion = [...svg.querySelectorAll<SVGPathElement>('#motion-paths path')];
+  const token = svg.querySelector<SVGGElement>('#signals')!;
+  const sparks = [...token.querySelectorAll('circle')];
+  const socket = svg.querySelector('#intake')!;
+  const routeGroup = svg.querySelector('#routes')!;
   const statusCards = [...svg.querySelectorAll<SVGGElement>('.node')].slice(1);
   const meta = svg.querySelector('#meta-label')!;
   const tag = svg.querySelector('#route-tag')!;
   let routeKey = '';
-  let routeLength = 0;
+  let lengths: number[] = [];
   let lastStates = '';
 
   return (state: SampleFrame, reduced: boolean) => {
@@ -80,21 +89,34 @@ export function makeDiagram(svg: SVGSVGElement) {
         path.setAttribute('class', `route ${control ? 'control' : 'data'}${route === 'heartbeat' ? ' interrupted' : ''}`);
         path.setAttribute('marker-end', segments[i] && route !== 'heartbeat' ? `url(#arrow-${marker})` : 'none');
       }
-      const trajectory = motionPaths[route] ?? segments[0] ?? '';
-      motion.setAttribute('d', trajectory);
-      routeLength = trajectory ? motion.getTotalLength() : 0;
-      token.setAttribute('class', control ? 'control-token' : 'data-token');
+      const trajectories = motionPaths[route] ?? segments.slice(0, 1);
+      lengths = motion.map((path, i) => {
+        const d = trajectories[i] ?? '';
+        path.setAttribute('d', d);
+        return d ? path.getTotalLength() : 0;
+      }).slice(0, trajectories.length);
+      sparks.forEach(spark => spark.classList.toggle('control-signal', control));
+      socket.setAttribute('visibility', route === 'write' ? 'visible' : 'hidden');
       meta.textContent = beat.meta;
-      tag.textContent = state.tag;
     }
+    if (tag.textContent !== state.tag) tag.textContent = state.tag;
     const progress = state.progress;
-    const show = routeLength > 0 && progress > 0 && progress < 1 && !reduced && route !== 'heartbeat';
+    const show = lengths.length > 0 && progress > 0 && progress < 1 && !reduced && route !== 'heartbeat';
     token.setAttribute('visibility', show ? 'visible' : 'hidden');
-    if (show) {
-      const p = motion.getPointAtLength(progress * routeLength);
-      token.setAttribute('cx', String(p.x));
-      token.setAttribute('cy', String(p.y));
-    }
+    routeGroup.setAttribute('opacity', route === 'write' && state.local < writeLaunch ? '.32' : '1');
+    if (show) sparks.forEach((spark, i) => {
+      const q = (progress - .014 * i) * lengths.length;
+      spark.setAttribute('visibility', q < 0 ? 'hidden' : 'inherit');
+      const part = Math.min(lengths.length - 1, Math.max(0, Math.floor(q)));
+      const p = motion[part].getPointAtLength(clamp(q - part) * lengths[part]);
+      spark.setAttribute('cx', String(p.x));
+      spark.setAttribute('cy', String(p.y));
+    });
+    else sparks.forEach(spark => {
+      spark.removeAttribute('visibility');
+      spark.removeAttribute('cx');
+      spark.removeAttribute('cy');
+    });
     const signature = state.states.join('/');
     if (signature !== lastStates) {
       lastStates = signature;

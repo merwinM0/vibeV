@@ -22,11 +22,9 @@ function faces(x: number, top: number, bottom: number, z: number): Record<Face, 
   };
 }
 
-// Geometry is in texture-pixel units, with each cuboid offset relative to its pivot.
-export function drawAvatar(ctx: CanvasRenderingContext2D, skin: Skin, view: AvatarView) {
-  const { x, y, scale, highlight, yaw = .35, tilt = .16, action = 'idle', time = 0, intensity = 1 } = view;
+function rigFor(skin: Skin, view: AvatarView) {
+  const { yaw = .35, tilt = .16, action = 'idle', time = 0, intensity = 1 } = view;
   const pose = view.pose ?? poseAt(action, time, intensity);
-  const headScale = view.headScale ?? 1;
   const camera = (p: Vec3) => rotate(rotate(p, [0, yaw, 0]), [tilt, 0, 0]);
   const [armWidth] = dimensions('leftArm', skin.model);
   const pivots: Record<Part, Vec3> = {
@@ -34,10 +32,26 @@ export function drawAvatar(ctx: CanvasRenderingContext2D, skin: Skin, view: Avat
     rightArm: [-4 - armWidth / 2, 23, 0], leftArm: [4 + armWidth / 2, 23, 0],
     rightLeg: [-2, 12, 0], leftLeg: [2, 12, 0],
   };
+  function project(part: Part, p: Vec3) {
+    const [px, py, pz] = pivots[part];
+    const [a, b, c] = rotate(p, pose.angles[part]);
+    return camera([a + px, b + py + pose.lift, c + pz]);
+  }
+  return { pose, camera, pivots, project };
+}
+
+export function handAnchor(skin: Skin, view: AvatarView, hand: 'leftArm' | 'rightArm') {
+  const [a, b] = rigFor(skin, view).project(hand, [0, -10, 1.6]);
+  return { x: view.x + a * view.scale, y: view.y - b * view.scale };
+}
+
+// Geometry is in texture-pixel units, with each cuboid offset relative to its pivot.
+export function drawAvatar(ctx: CanvasRenderingContext2D, skin: Skin, view: AvatarView) {
+  const { x, y, scale, highlight, headScale = 1 } = view;
+  const { pose, camera, pivots, project } = rigFor(skin, view);
   const surfaces: Surface[] = [];
   for (const part of parts) {
     const [w, h, d] = dimensions(part, skin.model);
-    const [px, py, pz] = pivots[part];
     const top = part === 'head' ? h : part.endsWith('Arm') ? 1 : 0;
     const angle = pose.angles[part];
     const transform = (p: Vec3) => {
@@ -45,8 +59,7 @@ export function drawAvatar(ctx: CanvasRenderingContext2D, skin: Skin, view: Avat
       const mid = top - h / 2;
       const local: Vec3 = part === 'head' && headScale !== 1
         ? [p[0] * headScale, mid + (p[1] - mid) * headScale, p[2] * headScale] : p;
-      const [a, b, c] = rotate(local, angle);
-      return camera([a + px, b + py + pose.lift, c + pz]);
+      return project(part, local);
     };
     for (const outer of [false, true]) {
       const grow = outer ? part === 'head' ? .46 : .22 : 0;
