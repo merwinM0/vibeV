@@ -4,7 +4,7 @@
 
 Watch chapter-based animated explainers in your browser. The homepage lists the available works, each with its own player page.
 
-Current work: **Hadoop Ecosystem**. Follow a batch of e-commerce orders through storage and parallel processing to a sales report and an order lookup. The film runs **7:15 across 10 chapters and 59 shots**. By default, narration clips are edited to the original shot timing; unrecorded passages keep their original captions. A silent edition is also available. Both play in 16:9 landscape, with no video export.
+Current work: **Hadoop Ecosystem**. Follow a batch of e-commerce orders through storage and parallel processing to a sales report and an order lookup. The film runs **7:15 across 10 chapters and 59 shots**. Narration is edited to the original shot timing, and captions follow actual speech. Unrecorded shots keep their original captions; switch to the silent edition for the complete storyboard captions. Both play in 16:9 landscape, with no video export.
 
 ## Quick start
 

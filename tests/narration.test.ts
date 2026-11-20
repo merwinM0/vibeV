@@ -13,22 +13,42 @@ test('adding narration leaves every original animation frame and shot boundary u
   }
 });
 
-test('each audio edit fits its shot and switches captions at the placement frame', () => {
+test('each subtitle follows the measured speech rather than the edit point', () => {
   let previousEnd = 0;
+  let previousCaptionEnd = 0;
+  expect(narrationClips).toHaveLength(73);
   for (const clip of narrationClips) {
     const start = clip.atFrame / FPS;
-    const length = clip.outPoint - clip.inPoint;
-    const end = start + length;
-    const narrated = narrationFrameAt(start);
-    expect(length).toBeGreaterThan(0);
+    const end = start + clip.outPoint - clip.inPoint;
+    const { scene } = narrationFrameAt(start);
+    expect(clip.id).toBe(scene.id);
     expect(start).toBeGreaterThanOrEqual(previousEnd);
-    expect(end).toBeLessThanOrEqual(narrated.scene.end);
-    expect(narrated.scene.id).toBe(clip.id);
-    expect(narrated.caption).toBe(clip.caption);
-    expect(narrationFrameAt(start + length / 2).caption).toBe(clip.caption);
-    expect(narrationFrameAt((clip.atFrame - 1) / FPS).caption).not.toBe(clip.caption);
+    expect(end).toBeLessThanOrEqual(scene.end);
+    expect(clip.inPoint).toBeLessThan(clip.speechIn);
+    expect(clip.speechIn).toBeLessThan(clip.speechOut);
+    expect(clip.speechOut).toBeLessThan(clip.outPoint);
+    expect(clip.startFrame).toBeGreaterThanOrEqual(previousCaptionEnd);
+    expect(clip.startFrame).toBeGreaterThan(clip.atFrame);
+    expect(clip.endFrame / FPS).toBeLessThanOrEqual(scene.end);
+    expect(narrationFrameAt((clip.startFrame - 1) / FPS).caption).not.toBe(clip.caption);
+    expect(narrationFrameAt(clip.startFrame / FPS).caption).toBe(clip.caption);
+    expect(narrationFrameAt((clip.endFrame - 1) / FPS).caption).toBe(clip.caption);
+    expect(narrationFrameAt(clip.endFrame / FPS).caption).not.toBe(clip.caption);
     previousEnd = end;
+    previousCaptionEnd = clip.endFrame;
   }
+});
+
+test('silent gaps do not replace a spoken line with a stale storyboard caption', () => {
+  expect(narrationFrameAt(71.6).caption).toBe('');
+  expect(narrationFrameAt(71.7).caption).toBe('再沿管线传副本，');
+  expect(narrationFrameAt(73.2).caption).toBe('');
+  expect(narrationFrameAt(136.25).caption).toBe('');
+  expect(narrationFrameAt(136.8).caption).toBe('再申请任务容器。');
+  // The unvoiced summary is visible before the spoken credit, not under it.
+  expect(narrationFrameAt(430).caption).toBe(frameAt(430).caption);
+  expect(narrationFrameAt(433.1).caption).toBe('此内容由 AI 生成。');
+  expect(narrationFrameAt(duration).caption).toBe('');
 });
 
 test('missing speech keeps the original captions; re-ordered lines follow the storyboard', () => {
