@@ -29,10 +29,17 @@ h1 { margin-top: 5px; font-size: clamp(23px, 2.8vw, 38px); line-height: 1.24; le
 .film-kicker, .film-version { display: flex; align-items: center; gap: .75cqw; color: var(--film-hue); font-weight: 750; font-size: 1.36cqw; letter-spacing: .1em; }
 .film-number { padding: .13cqw .52cqw; border: .1cqw solid currentColor; border-radius: 999px; letter-spacing: 0; }
 .film-version { color: var(--screen-dim); font-size: 1.06cqw; }
-.film-title { position: absolute; z-index: 1; left: 4.8%; top: 10.5%; font-size: 4.38cqw; letter-spacing: -.055em; font-weight: 850; line-height: 1.13; }
-.film-deck { position: absolute; z-index: 1; left: 5%; top: 20.05%; font-size: 1.79cqw; font-weight: 580; color: var(--screen-dim); }
+.film-heading { position: absolute; z-index: 1; left: 4.8%; top: 10.5%; right: 4.8%; }
+.film-title { font-size: 4.38cqw; letter-spacing: -.055em; font-weight: 850; line-height: 1.13; }
+.film-deck { margin-top: .42cqw; font-size: 1.79cqw; font-weight: 580; color: var(--screen-dim); }
+.receipt { position: absolute; left: 54%; top: 34%; width: 32%; padding: 2.1cqw 2.3cqw; border: .1cqw solid #ae885f; border-radius: 1.2cqw; background: linear-gradient(140deg, #2f2927, #20212a); }
+.receipt-code { color: var(--film-control); font-size: 1.37cqw; letter-spacing: .13em; }
+.receipt-item { margin-top: .55cqw; font-weight: 750; font-size: 2.64cqw; }
+.receipt > div { margin-block: .15cqw .56cqw; color: #b2f7c4; font-size: 1.8cqw; }
+.receipt-value { font-size: 5.1cqw; font-weight: 800; line-height: 1.07; }
+.receipt-date { color: var(--screen-dim); font-size: 1.39cqw; }
 .world { position: absolute; inset: 0; transform-origin: var(--focus-point, 50% 55%); transform: translateX(var(--shift-x, 0%)) scale(var(--zoom, 1)); }
-.diagram { position: absolute; left: 4.6875%; width: 78.125%; top: 27.7778%; overflow: visible; }
+.diagram { position: absolute; left: 4.6875%; width: 78.125%; top: 27.7778%; overflow: visible; opacity: 0; }
 .layer { fill: #151a24; fill-opacity: .82; stroke: #353c4e; stroke-width: 1.5; }
 .data-layer { fill: #0f1a24; stroke: #2b4355; }
 .diagram-eyebrow { fill: var(--screen-ink); font-size: 23px; font-weight: 780; letter-spacing: 1px; }
@@ -60,7 +67,7 @@ h1 { margin-top: 5px; font-size: clamp(23px, 2.8vw, 38px); line-height: 1.24; le
 .signal.control-signal { fill: var(--film-control); }
 .signal-lead { stroke: var(--screen-ink); stroke-width: 1.6; filter: drop-shadow(0 0 6px var(--film-hue)); }
 #host-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-.film-file { position: absolute; top: 28.3%; right: 4.6%; display: grid; justify-items: end; gap: .16cqw; color: var(--screen-dim); font-size: 1.12cqw; }
+.film-file { position: absolute; opacity: 0; top: 28.3%; right: 4.6%; display: grid; justify-items: end; gap: .16cqw; color: var(--screen-dim); font-size: 1.12cqw; }
 .film-file strong { color: var(--film-data); font-size: 2.85cqw; line-height: 1.05; margin-top: .6cqw; letter-spacing: -.055em; }
 .film-caption { position: absolute; z-index: 2; inset: auto 5% 5.1%; text-align: center; text-wrap: balance; font-size: 2.18cqw; line-height: 1.3; font-weight: 750; color: #fff; -webkit-text-stroke: .09em #000; paint-order: stroke fill; }
 .transport { display: grid; gap: 3px; padding: 5px 14px 10px; }

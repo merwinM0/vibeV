@@ -3,7 +3,8 @@ import type { Part } from './skin';
 export const actions = ['idle', 'walk', 'look', 'point', 'nod'] as const;
 export type Action = typeof actions[number];
 export type Vec3 = readonly [number, number, number];
-export type Pose = { angles: Record<Part, Vec3>; lift: number };
+export type Limb = 'leftArm' | 'rightArm' | 'leftLeg' | 'rightLeg';
+export type Pose = { angles: Record<Part, Vec3>; lift: number; bends?: Partial<Record<Limb, number>>; root?: Vec3 };
 export const phaseLength = 1.14;
 export const clamp01 = (q: number) => Math.max(0, Math.min(1, q));
 export function ease(from: number, to: number, time: number) {

@@ -1,5 +1,7 @@
 import { drawAvatar } from '../../avatar/draw';
-import { actions } from '../../avatar/motion';
+import { actions, ease } from '../../avatar/motion';
+import { actingLabels, actingPose } from '../../avatar/performance';
+import type { Acting } from '../../avatar/performance';
 import { prepareSkin } from '../../avatar/skin';
 import type { Skin } from '../../avatar/skin';
 import { drawFilm, duration, frameCount, fps, sampleFilm } from './film';
@@ -126,6 +128,8 @@ function motionLab(defaultSkin: Skin) {
   let origin = 0;
   let revision = 0;
 
+  const gestures = Object.keys(actingLabels) as Acting[];
+  for (const gesture of gestures) action.add(new Option(actingLabels[gesture], gesture));
   const readModel = () => model.value === 'slim' || model.value === 'classic' ? model.value : skin.model;
   const report = (prefix: string) => { status.textContent = `${prefix} · ${readModel() === 'slim' ? '细手臂' : '标准手臂'}`; };
   function paint(time: number) {
@@ -136,7 +140,15 @@ function motionLab(defaultSkin: Skin) {
     ctx.fillStyle = '#dcebed';
     ctx.beginPath(); ctx.ellipse(400, 516, 167, 15, 0, 0, 2 * Math.PI); ctx.fill();
     const name = actions.find(value => action.value === value) ?? 'idle';
-    drawAvatar(ctx, { ...skin, model: readModel() }, { x: 400, y: 514, scale: 12.8, yaw: angle.valueAsNumber * Math.PI / 180, action: name, time });
+    const gesture = gestures.find(value => action.value === value);
+    const weight = ease(.1, 1.05, time) * (1 - ease(2.65, 3.9, time));
+    const performance = gesture ? actingPose(gesture, weight) : undefined;
+    if (gesture && ['sit', 'seatedThink', 'seatedTap', 'seatedPoint', 'recline'].includes(gesture)) {
+      ctx.fillStyle = '#b2cccf';
+      ctx.beginPath(); ctx.roundRect(290, 417, 220, 32, 9); ctx.fill();
+      ctx.fillRect(306, 449, 12, 65); ctx.fillRect(482, 449, 12, 65);
+    }
+    drawAvatar(ctx, { ...skin, model: readModel() }, { x: 400, y: 514, scale: 12.8, yaw: angle.valueAsNumber * Math.PI / 180, action: name, time, pose: performance });
     poseTime.textContent = `${time.toFixed(2)} 秒`;
   }
   function stop() {

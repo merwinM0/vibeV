@@ -77,7 +77,7 @@ export function makeDiagram(svg: SVGSVGElement) {
   let lastStates = '';
 
   return (state: SampleFrame, reduced: boolean) => {
-    const { beat, route } = state;
+    const { route } = state;
     const key = `${state.index}/${route}`;
     if (routeKey !== key) {
       routeKey = key;
@@ -97,13 +97,15 @@ export function makeDiagram(svg: SVGSVGElement) {
       }).slice(0, trajectories.length);
       sparks.forEach(spark => spark.classList.toggle('control-signal', control));
       socket.setAttribute('visibility', route === 'write' ? 'visible' : 'hidden');
-      meta.textContent = beat.meta;
+      meta.textContent = state.meta;
     }
     if (tag.textContent !== state.tag) tag.textContent = state.tag;
     const progress = state.progress;
     const show = lengths.length > 0 && progress > 0 && progress < 1 && !reduced && route !== 'heartbeat';
     token.setAttribute('visibility', show ? 'visible' : 'hidden');
-    routeGroup.setAttribute('opacity', route === 'write' && state.local < writeLaunch ? '.32' : '1');
+    const opacity = route === 'write' && state.local < writeLaunch ? .27 + .45 * state.routeReveal
+      : route === 'heartbeat' || reduced && route !== 'none' ? 1 : state.routeReveal;
+    routeGroup.setAttribute('opacity', opacity.toFixed(3));
     if (show) sparks.forEach((spark, i) => {
       const q = (progress - .014 * i) * lengths.length;
       spark.setAttribute('visibility', q < 0 ? 'hidden' : 'inherit');

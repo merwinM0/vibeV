@@ -19,11 +19,11 @@ bun run dev
 
 ### 新版 Hadoop 样片
 
-在首页打开「从 MC 交易日志到 HDFS · 样片」（`/works/hadoop-data-hdfs/`）。这段 **1 分 46 秒无声图解**用同一个 B2 展示写入、读取、失联改读和补副本，支持跳章、逐镜、拖动和全屏。网页外壳沿用旧版深色主题；舞台增加了 B2 手持与放置、跟随指向的局部推镜和传输粒子。头部缩放仍按模拟口播节拍预演。详见[样片分镜](works/hadoop-data-hdfs/分镜.md)与[制作规范](SKILL.md)。
+在首页打开「从 MC 交易日志到 HDFS · 样片」（`/works/hadoop-data-hdfs/`）。这段 **1 分 46 秒无声图解**用同一个 B2 展示写入、读取、失联改读和补副本，支持跳章、逐镜、拖动和全屏。保留旧版深色外壳。角色从一张橡木交易单切入，按操作台、放下 B2、坐着查位置和改读。头部缩放按更密的模拟口播节拍预演。详见[样片分镜](works/hadoop-data-hdfs/分镜.md)与[制作规范](vibe-make/SKILL.md)。
 
 ### MC 角色动画样片
 
-在首页打开「一张皮肤，怎么让角色动起来？」（`/works/mc-avatar/`）。30 秒样片只提供配音版，白字细黑描边字幕按实际口播开合，角色动作跟随关键词；下方可单独预览动作、转动视角或本地换一张 64×64 PNG 皮肤。
+在首页打开「一张皮肤，怎么让角色动起来？」（`/works/mc-avatar/`）。30 秒样片只提供配音版，白字细黑描边字幕按实际口播开合，角色动作跟随关键词；下方可预览共享动作库（含托腮、坐姿、侧卧）、转动视角或本地换一张 64×64 PNG 皮肤。
 
 需要重新剪接原始录音时，使用带 libmp3lame 的 FFmpeg 运行 `bun run avatar:dub`。导出时，安装 Chromium 和带 libx264 的 FFmpeg，运行 `bun run avatar:render`；如果 Chromium 不在 `PATH`，用 `env CHROMIUM_BIN=/你的浏览器路径 bun run avatar:render`。生成的 `exports/mc-avatar-30s.mp4` 是 1080p、30 fps 的配音版。详见 [分镜与复用说明](docs/MC角色样片.md)。
 

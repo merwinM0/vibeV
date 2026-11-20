@@ -1,7 +1,7 @@
 import { makeDiagram } from './diagram';
 import { makeHost } from './host';
 import { lensAt, stageHeight, stageWidth } from './stage';
-import { beats, chapters, fps, frameAt, frameCount, timecode } from './timeline';
+import { beats, chapters, fps, frameAt, frameCount, smooth, storyCues, timecode } from './timeline';
 
 function byId(id: string) { return document.getElementById(id)!; }
 function control<T extends HTMLElement>(id: string, kind: { new(): T }) {
@@ -23,6 +23,9 @@ const playLabel = byId('play-label');
 const icon = play.querySelector('path')!;
 const sceneNumber = byId('scene-number');
 const reading = byId('reading-text');
+const filmHeading = byId('film-heading');
+const receipt = byId('receipt');
+const fileBadge = stage.querySelector<HTMLElement>('.film-file')!;
 const filmTitle = byId('film-title');
 const filmDeck = byId('film-deck');
 const filmCaption = byId('film-caption');
@@ -31,7 +34,8 @@ const filmChapter = byId('film-chapter');
 const copyCount = byId('copy-count');
 const readingCount = byId('reading-count');
 const status = byId('status');
-const diagram = makeDiagram(document.querySelector<SVGSVGElement>('#diagram')!);
+const svg = stage.querySelector<SVGSVGElement>('#diagram')!;
+const diagram = makeDiagram(svg);
 let renderHost: Awaited<ReturnType<typeof makeHost>> | undefined;
 const motion = matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -64,7 +68,6 @@ function paint(force = false) {
     lastBeat = state.index;
     filmTitle.textContent = state.beat.title;
     filmDeck.textContent = state.beat.deck;
-    filmCaption.textContent = reading.textContent = state.beat.caption;
     const { route } = state.beat;
     stage.dataset.cue = route === 'heartbeat' || route === 'readB' ? 'fault'
       : ['write', 'readA', 'repair', 'none'].includes(route) ? 'bytes' : 'control';
@@ -82,6 +85,15 @@ function paint(force = false) {
     filmChapter.textContent = chapters[state.chapter].title;
   }
   const reduced = motion.matches;
+  if (filmCaption.textContent !== state.caption) filmCaption.textContent = reading.textContent = state.caption;
+  const board = reduced ? Number(state.seconds >= storyCues.open) : state.diagramReveal;
+  svg.style.opacity = String(board);
+  fileBadge.style.opacity = String(board);
+  const slip = reduced ? 1 - board : 1 - smooth((state.seconds - 3.45) / 1.3);
+  receipt.style.opacity = String(slip);
+  receipt.style.transform = reduced ? 'none' : `translateY(${(1 - slip) * -12}px)`;
+  filmHeading.style.opacity = String(reduced ? 1 : .48 + .52 * state.sceneReveal);
+  filmHeading.style.transform = reduced ? 'none' : `translateY(${(1 - state.sceneReveal) * 5}px)`;
   const lens = lensAt(state, reduced);
   world.style.setProperty('--focus-point', `${lens.x / stageWidth * 100}% ${lens.y / stageHeight * 100}%`);
   world.style.setProperty('--zoom', lens.zoom.toFixed(4));
