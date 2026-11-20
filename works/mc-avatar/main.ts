@@ -2,7 +2,7 @@ import { drawAvatar } from '../../avatar/draw';
 import { actions } from '../../avatar/motion';
 import { prepareSkin } from '../../avatar/skin';
 import type { Skin } from '../../avatar/skin';
-import { drawFilm, frameCount, fps, sampleFilm } from './film';
+import { drawFilm, duration, frameCount, fps, sampleFilm } from './film';
 
 function element<T extends HTMLElement>(id: string, kind: { new(): T }): T {
   const node = document.getElementById(id);
@@ -13,6 +13,8 @@ function element<T extends HTMLElement>(id: string, kind: { new(): T }): T {
 function filmPlayer(skin: Skin) {
   const clip = element('clip', HTMLElement);
   const canvas = element('film', HTMLCanvasElement);
+  const audio = element('narration', HTMLAudioElement);
+  const status = element('clip-status', HTMLElement);
   const caption = element('film-caption', HTMLElement);
   const play = element('play', HTMLButtonElement);
   const seek = element('seek', HTMLInputElement);
@@ -21,19 +23,19 @@ function filmPlayer(skin: Skin) {
   const context = canvas.getContext('2d', { alpha: false });
   if (!context) throw new Error('当前浏览器无法绘制动画。');
   const ctx = context;
-  let playing = false;
-  let offset = 0;
-  let origin = 0;
+  let reachedEnd = false;
   let raf = 0;
   let last = -1;
-
-  const current = () => playing ? offset + (performance.now() - origin) * fps / 1000 : offset;
+  const playing = () => !audio.paused && !audio.ended && !audio.error;
+  // Audio is the only clock: buffering and seeking cannot pull the visuals ahead.
+  const current = () => reachedEnd || audio.ended ? frameCount : Math.min(frameCount, audio.currentTime * fps);
   function paint(value: number) {
-    const pos = Math.floor(Math.max(0, Math.min(frameCount, value)));
+    // Media time can round below an exact frame boundary on a seek.
+    const pos = Math.min(frameCount, Math.floor(value + .001));
     if (last === pos) return;
     last = pos;
-    const { shot } = sampleFilm(pos);
-    if (caption.textContent !== shot.caption) caption.textContent = shot.caption;
+    const frame = sampleFilm(pos);
+    if (caption.textContent !== frame.caption) caption.textContent = frame.caption;
     drawFilm(ctx, skin, pos);
     seek.value = String(pos);
     const code = `00:${String(Math.floor(pos / fps)).padStart(2, '0')}`;
@@ -42,35 +44,47 @@ function filmPlayer(skin: Skin) {
       seek.setAttribute('aria-valuetext', code);
     }
   }
-  function pause() {
-    offset = Math.min(frameCount, current());
-    playing = false;
-    cancelAnimationFrame(raf);
-    play.textContent = offset >= frameCount ? '重播' : '播放';
-    paint(offset);
-  }
   function tick() {
+    raf = 0;
     const position = current();
-    if (position >= frameCount) { pause(); return; }
+    if (position >= frameCount && playing()) audio.pause();
+    const label = playing() ? '暂停' : position >= frameCount ? '重播' : '播放';
+    if (play.textContent !== label) play.textContent = label;
     paint(position);
-    raf = requestAnimationFrame(tick);
+    if (playing()) raf = requestAnimationFrame(tick);
   }
-  function toggle() {
-    if (playing) { pause(); return; }
-    if (offset >= frameCount) offset = 0;
-    origin = performance.now();
-    playing = true;
-    play.textContent = '暂停';
+  function render() {
+    cancelAnimationFrame(raf);
     tick();
   }
+  function audioFailed() {
+    status.textContent = '配音无法播放，请刷新页面后重试。';
+    render();
+  }
+  function toggle() {
+    if (playing()) audio.pause();
+    else {
+      if (current() >= frameCount) jump(0);
+      status.textContent = '';
+      void audio.play().catch((error: unknown) => {
+        if (!(error instanceof DOMException) || error.name !== 'AbortError') audioFailed();
+      });
+    }
+    render();
+  }
   function jump(position: number) {
-    offset = Math.max(0, Math.min(frameCount, position));
-    origin = performance.now();
-    if (offset === frameCount || !playing) pause();
-    else paint(offset);
+    const frame = Math.max(0, Math.min(frameCount, position));
+    reachedEnd = frame === frameCount;
+    if (reachedEnd) audio.pause();
+    const end = Number.isFinite(audio.duration) ? Math.min(audio.duration, duration) : duration;
+    audio.currentTime = Math.min(end, frame / fps);
+    render();
   }
   seek.setAttribute('aria-valuetext', '00:00');
-  paint(0);
+  render();
+  for (const event of ['play', 'pause', 'seeked', 'ended']) audio.addEventListener(event, render);
+  audio.addEventListener('error', audioFailed);
+  audio.src = audio.dataset.src ?? '';
   play.disabled = seek.disabled = false;
   expand.disabled = !document.fullscreenEnabled;
   play.addEventListener('click', toggle);
@@ -89,7 +103,7 @@ function filmPlayer(skin: Skin) {
     } catch { expand.title = '当前环境无法进入全屏'; }
   });
   document.addEventListener('fullscreenchange', () => { expand.textContent = document.fullscreenElement === clip ? '退出全屏' : '全屏'; });
-  document.addEventListener('visibilitychange', () => { if (document.hidden && playing) pause(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden && playing()) audio.pause(); });
 }
 
 function motionLab(defaultSkin: Skin) {
@@ -177,7 +191,7 @@ function motionLab(defaultSkin: Skin) {
 
 const status = element('clip-status', HTMLElement);
 void Promise.all([prepareSkin(element('sample-skin', HTMLImageElement)), document.fonts.ready]).then(([skin]) => {
+  status.textContent = '';
   filmPlayer(skin);
   motionLab(skin);
-  status.hidden = true;
 }).catch(() => { status.textContent = '无法加载角色预览，请刷新页面重试。'; });

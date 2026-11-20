@@ -1,7 +1,8 @@
 import { drawAvatar } from '../../avatar/draw';
-import { ease, poseAt } from '../../avatar/motion';
+import { ease, phaseLength, poseAt } from '../../avatar/motion';
 import { parts, skinUV } from '../../avatar/skin';
 import type { Part, Skin } from '../../avatar/skin';
+import { narrationClips } from './narration';
 
 export const width = 1920;
 export const height = 1080;
@@ -9,18 +10,24 @@ export const fps = 30;
 export const frameCount = 900;
 export const duration = frameCount / fps;
 export const shots = [
-  { start: 0, title: '一张皮肤，怎么走起来？', caption: '这张小小的皮肤，怎么变成会走的角色？' },
-  { start: 150, title: '先找出六个部件', caption: '我们先把皮肤分配给头、身体和四肢。' },
-  { start: 330, title: '抬手是绕肩旋转', caption: '颜色来自贴图。抬手，靠的是让手臂绕肩转。' },
-  { start: 510, title: '走路时，两组肢体交替', caption: '左腿和右臂一起向前；下一步交换。' },
-  { start: 720, title: '一张皮肤，演下一幕', caption: '皮肤不换。换一组关节动作，就能演出下一幕。' },
+  { start: 0, title: '一张皮肤，怎么走起来？' },
+  { start: 114, title: '先找出六个部件' },
+  { start: 300, title: '抬手是绕肩旋转' },
+  { start: 486, title: '走路时，两组肢体交替' },
+  { start: 672, title: '一张皮肤，演下一幕' },
 ] as const;
 
 export function sampleFilm(requestedFrame: number) {
   const frame = Number.isFinite(requestedFrame) ? Math.max(0, Math.min(frameCount - 1, Math.floor(requestedFrame))) : 0;
   let index = 0;
   while (index + 1 < shots.length && shots[index + 1].start <= frame) index++;
-  return { frame, index, shot: shots[index], time: (frame - shots[index].start) / fps };
+  const shot = shots[index];
+  let caption = '';
+  for (const cue of narrationClips) {
+    if (cue.atFrame > frame) break;
+    if (cue.atFrame >= shot.start) caption = cue.caption;
+  }
+  return { frame, index, shot, caption, time: (frame - shot.start) / fps };
 }
 
 const palette = { paper: '#ebf5f7', panel: '#f8fbfc', ink: '#122e3a', accent: '#245e64', muted: '#29525e', grid: '#dcebed', rule: '#bad6d7', sand: '#f7e7c7', darkSand: '#77541e' };
@@ -95,7 +102,9 @@ function opening(ctx: CanvasRenderingContext2D, skin: Skin, t: number) {
 }
 
 function partsScene(ctx: CanvasRenderingContext2D, skin: Skin, t: number) {
-  const index = Math.min(5, Math.floor(t));
+  // Head, torso and then the four limbs follow the order of the narration.
+  const changes = [.7, 1.55, 2.38, 2.78, 3.18, 3.58];
+  const index = changes.reduce((last, at, i) => t >= at ? i : last, -1);
   const part = parts[index];
   atlas(ctx, skin, 203, 304, 7.25, part);
   label(ctx, '皮肤展开图', 202, 824, 30, palette.muted);
@@ -109,7 +118,7 @@ function partsScene(ctx: CanvasRenderingContext2D, skin: Skin, t: number) {
 }
 
 function hingeScene(ctx: CanvasRenderingContext2D, skin: Skin, t: number) {
-  const actionTime = Math.min(1.5, Math.max(0, t - .45));
+  const actionTime = Math.min(1.5, Math.max(0, t - 3.36));
   const angle = poseAt('point', actionTime).angles.leftArm[2];
   const x = 1196, y = 475, size = 187;
   ground(ctx, 588, 808);
@@ -128,15 +137,20 @@ function hingeScene(ctx: CanvasRenderingContext2D, skin: Skin, t: number) {
 }
 
 function walkScene(ctx: CanvasRenderingContext2D, skin: Skin, t: number) {
-  const x = 540 + 230 * ease(.1, 6.7, t);
+  // Hold each opposite-limb pose until the narration calls for the next step.
+  const step = ease(.15, 1.45, t);
+  const swap = ease(3.56, 4.1, t);
+  const stride = phaseLength * (.25 * step + .5 * swap);
+  const x = 540 + 82 * step + 120 * swap;
   for (let i = 0; i < 13; i++) {
     const tick = 228 + i * 61;
     trace(ctx, [[tick, 793], [tick, 807]], palette.rule, 2);
   }
   trace(ctx, [[210, 800], [980, 800]], palette.rule, 3);
   ground(ctx, x, 794, 137);
-  drawAvatar(ctx, skin, { x, y: 794, scale: 14.5, yaw: 1.01, action: 'walk', time: t });
-  const pair = poseAt('walk', t).angles.leftLeg[0] <= 0 ? 0 : 1;
+  drawAvatar(ctx, skin, { x, y: 794, scale: 14.5, yaw: 1.01, action: 'walk', time: stride });
+  const pitch = poseAt('walk', stride).angles.leftLeg[0];
+  const pair = Math.abs(pitch) < .001 ? -1 : pitch < 0 ? 0 : 1;
   rect(ctx, 1060, 348, 600, 389, palette.paper, 20, palette.rule);
   label(ctx, '此刻向前', 1110, 421, 36, palette.ink, 730);
   ['左腿 ＋ 右臂', '右腿 ＋ 左臂'].forEach((value, i) => {
@@ -148,7 +162,7 @@ function walkScene(ctx: CanvasRenderingContext2D, skin: Skin, t: number) {
 
 function closing(ctx: CanvasRenderingContext2D, skin: Skin, t: number) {
   ground(ctx, 577, 814);
-  drawAvatar(ctx, skin, { x: 577, y: 811, scale: 15.8, yaw: .47 * (1 - ease(.2, 1.3, t)), action: 'nod', time: Math.max(0, t - 1.3), intensity: 1 - ease(4.1, 5.2, t) });
+  drawAvatar(ctx, skin, { x: 577, y: 811, scale: 15.8, yaw: .47 * (1 - ease(0, .55, t)), action: 'nod', time: Math.max(0, t - .18), intensity: 1 - ease(4.1, 5.2, t) });
   rect(ctx, 903, 342, 820, 423, palette.accent, 23);
   label(ctx, '贴图定外观', 972, 483, 72, white, 760);
   trace(ctx, [[971, 534], [1639, 534]], '#70a0a4', 2);
@@ -158,7 +172,7 @@ function closing(ctx: CanvasRenderingContext2D, skin: Skin, t: number) {
 const painters = [opening, partsScene, hingeScene, walkScene, closing];
 
 export function drawFilm(ctx: CanvasRenderingContext2D, skin: Skin, frame: number) {
-  const { index, shot, time } = sampleFilm(frame);
+  const { index, shot, caption, time } = sampleFilm(frame);
   ctx.save();
   rect(ctx, 0, 0, width, height, palette.paper);
   ctx.fillStyle = '#cadfe3';
@@ -169,10 +183,12 @@ export function drawFilm(ctx: CanvasRenderingContext2D, skin: Skin, frame: numbe
   label(ctx, `0${index + 1} / 05`, 1690, 92, 27, palette.muted);
   label(ctx, shot.title, 114, 189, 53, palette.ink, 750);
   painters[index](ctx, skin, time);
-  ctx.font = `650 34px ${textFont}`;
-  const size = ctx.measureText(shot.caption).width + 72;
-  rect(ctx, (width - size) / 2, 937, size, 74, palette.ink, 15);
-  ctx.textAlign = 'center';
-  label(ctx, shot.caption, width / 2, 986, 34, white, 650);
+  if (caption) {
+    ctx.font = `650 34px ${textFont}`;
+    const size = ctx.measureText(caption).width + 72;
+    rect(ctx, (width - size) / 2, 937, size, 74, palette.ink, 15);
+    ctx.textAlign = 'center';
+    label(ctx, caption, width / 2, 986, 34, white, 650);
+  }
   ctx.restore();
 }

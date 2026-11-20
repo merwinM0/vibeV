@@ -1,7 +1,8 @@
 import { expect, test } from 'bun:test';
 import { dimensions, parts, detectModel, skinUV } from '../avatar/skin';
 import { phaseLength, poseAt, rotate } from '../avatar/motion';
-import { duration, frameCount, sampleFilm, shots } from '../works/mc-avatar/film';
+import { duration, fps, frameCount, sampleFilm, shots } from '../works/mc-avatar/film';
+import { narrationClips } from '../works/mc-avatar/narration';
 
 test('both arm layouts preserve the atlas bounds and the second skin layer', () => {
   expect(dimensions('leftArm', 'slim')).toEqual([3, 12, 4]);
@@ -53,8 +54,26 @@ test('the sample spans exactly 30 seconds, with stable seek results across all c
   expect(frameCount).toBe(900);
   for (let i = 1; i < shots.length; i++) {
     expect(sampleFilm(shots[i].start - 1).index).toBe(i - 1);
-    expect(sampleFilm(shots[i].start)).toEqual({ frame: shots[i].start, index: i, shot: shots[i], time: 0 });
+    expect(sampleFilm(shots[i].start)).toEqual({ frame: shots[i].start, index: i, shot: shots[i], caption: '', time: 0 });
   }
   expect(sampleFilm(900)).toEqual(sampleFilm(899));
   expect(sampleFilm(-100)).toEqual(sampleFilm(0));
+});
+
+test('each narration cue switches at its authored frame and fits within its shot', () => {
+  let previousEnd = 0;
+  let inputEnd = 0;
+  expect(sampleFilm(0).caption).toBe('');
+  for (const clip of narrationClips) {
+    const { index, caption } = sampleFilm(clip.atFrame);
+    const end = clip.atFrame + (clip.outPoint - clip.inPoint) * fps;
+    expect(clip.inPoint).toBeGreaterThanOrEqual(inputEnd);
+    expect(clip.atFrame).toBeGreaterThanOrEqual(previousEnd);
+    expect(end).toBeLessThanOrEqual(shots[index + 1]?.start ?? frameCount);
+    expect(caption).toBe(clip.caption);
+    expect(sampleFilm(clip.atFrame - 1).caption).not.toBe(clip.caption);
+    previousEnd = end;
+    inputEnd = clip.outPoint;
+  }
+  expect(sampleFilm(frameCount - 1).caption).toBe('此内容由 AI 生成。');
 });

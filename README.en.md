@@ -19,9 +19,9 @@ Open the address printed in the terminal (default: `http://127.0.0.1:3000/`) and
 
 ### Minecraft character sample
 
-Open “一张皮肤，怎么让角色动起来？” (`/works/mc-avatar/`) from the homepage. The 30-second sample uses `avatar/mc_mon.png` to explain textures, joints, and walking. The controls below it let you preview poses, rotate the view, or try another 64×64 PNG skin locally.
+Open “一张皮肤，怎么让角色动起来？” (`/works/mc-avatar/`) from the homepage. The 30-second sample is available only with narration. Captions and motion follow the audio. The controls below it let you preview poses, rotate the view, or try another 64×64 PNG skin locally.
 
-To export the sample, install Chromium and FFmpeg with libx264, then run `bun run avatar:render`. If Chromium is not on `PATH`, use `env CHROMIUM_BIN=/path/to/chromium bun run avatar:render`. This writes a silent 1080p, 30 fps video to `exports/mc-avatar-30s.mp4`. See the [storyboard and reuse notes (Chinese)](docs/MC角色样片.md).
+To re-edit the original recording, run `bun run avatar:dub` with FFmpeg and libmp3lame. To export, install Chromium and FFmpeg with libx264, then run `bun run avatar:render`. If Chromium is not on `PATH`, use `env CHROMIUM_BIN=/path/to/chromium bun run avatar:render`. This writes a narrated 1080p, 30 fps video to `exports/mc-avatar-30s.mp4`. See the [storyboard and reuse notes (Chinese)](docs/MC角色样片.md).
 
 ### Set a homepage cover
 

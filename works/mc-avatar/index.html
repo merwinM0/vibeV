@@ -20,9 +20,10 @@
   <main class="avatar-page">
     <header class="intro">
       <h1>一张皮肤，怎么让角色动起来？</h1>
-      <p>30 秒测试片。用同一张 Minecraft 皮肤，展示贴图、关节和步态。</p>
+      <p>30 秒配音样片。用同一张 Minecraft 皮肤，展示贴图、关节和步态。</p>
     </header>
-    <section class="clip" aria-label="30 秒角色动画" id="clip" tabindex="0">
+    <section class="clip" aria-label="30 秒角色动画配音版" id="clip" tabindex="0">
+      <audio id="narration" data-src="./dub/narration.mp3" preload="metadata" hidden></audio>
       <canvas id="film" width="1920" height="1080" aria-label="一张皮肤，怎么让角色动起来？"></canvas>
       <div class="transport">
         <label class="seek-label">播放进度<input id="seek" type="range" min="0" max="900" value="0" disabled></label>
